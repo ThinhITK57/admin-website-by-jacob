@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package admin_crm;
+
+import "common.proto";
+
+option java_multiple_files = true;
+
+// =============================================
+// TEAM SERVICE - Team Management
+// =============================================
+
+service TeamService {
+  rpc CreateTeam (CreateTeamRequest) returns (TeamResponse);
+  rpc GetTeam (IdRequest) returns (TeamResponse);
+  rpc ListTeams (ListFilter) returns (ListTeamsResponse);
+  rpc UpdateTeam (UpdateTeamRequest) returns (TeamResponse);
+  rpc DeleteTeam (IdRequest) returns (StatusResponse);
+}
+
+message CreateTeamRequest {
+  string name = 1;
+  optional int64 leader_id = 2;
+  optional string description = 3;
+}
+
+message UpdateTeamRequest {
+  int64 id = 1;
+  optional string name = 2;
+  optional int64 leader_id = 3;
+  optional string description = 4;
+}
+
+message TeamResponse {
+  int64 id = 1;
+  string name = 2;
+  optional int64 leader_id = 3;
+  optional string leader_name = 4;
+  string description = 5;
+  int32 member_count = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message ListTeamsResponse {
+  repeated TeamResponse teams = 1;
+  PaginationResponse pagination = 2;
+}
