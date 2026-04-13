@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-admin_crm}
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-admin_crm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_pass_123}
+    volumes:
+      - redisdata_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "50051:50051"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-admin_crm}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_pass_123}@redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-super-secret-key-change-in-prod-12345}
+      - CORS_ORIGINS=http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "
+        python src/admin_crm/db/migrations/run_migrations.py || alembic upgrade head &&
+        python scripts/seed_data.py &&
+        python src/admin_crm/main.py
+      "
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "80:3000"  # Expose Frontend ở port 80 mặc định
+    environment:
+      # Nếu cấu hình API routes Nextjs trỏ về localhost thay vì server nội bộ
+      - BACKEND_GRPC_URL=backend:50051 
+    depends_on:
+      - backend
+
+volumes:
+  pgdata_prod:
+  redisdata_prod:
