@@ -58,7 +58,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "8080:3000"  # Expose Frontend ở port 8080
+      - "8086:3000"  # Expose Frontend ở port 8086
     environment:
       # Nếu cấu hình API routes Nextjs trỏ về localhost thay vì server nội bộ
       - BACKEND_GRPC_URL=backend:50051 
