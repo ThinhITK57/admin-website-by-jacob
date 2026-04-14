@@ -60,8 +60,8 @@ services:
     ports:
       - "8086:3000"  # Expose Frontend ở port 8086
     environment:
-      # Nếu cấu hình API routes Nextjs trỏ về localhost thay vì server nội bộ
-      - BACKEND_GRPC_URL=backend:50051 
+      # Cấu hình API routes Nextjs trỏ về server nội bộ auth.
+      - GRPC_HOST=backend:50051 
     depends_on:
       - backend
 
