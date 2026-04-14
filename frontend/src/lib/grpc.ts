@@ -3,10 +3,11 @@ import * as protoLoader from '@grpc/proto-loader';
 import path from 'path';
 
 // Define the path to the protobuf files
-const PROTO_PATH = path.resolve(process.cwd(), 'protos/user.proto');
+const PROTO_PATH_USER = path.resolve(process.cwd(), 'protos/user.proto');
+const PROTO_PATH_TEAM = path.resolve(process.cwd(), 'protos/team.proto');
 
-// Load protobuf
-const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+// Load protobufs
+const packageDefinition = protoLoader.loadSync([PROTO_PATH_USER, PROTO_PATH_TEAM], {
   keepCase: true,
   longs: String,
   enums: String,
@@ -19,10 +20,15 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const protoDescriptor = grpc.loadPackageDefinition(packageDefinition) as any;
 const adminCrmPackage = protoDescriptor.admin_crm;
 
-// Create the gRPC client
+// Create the gRPC clients
 const grpcHost = process.env.GRPC_HOST || 'localhost:50051';
 
 export const userClient = new adminCrmPackage.UserService(
+  grpcHost,
+  grpc.credentials.createInsecure()
+);
+
+export const teamClient = new adminCrmPackage.TeamService(
   grpcHost,
   grpc.credentials.createInsecure()
 );
@@ -57,5 +63,12 @@ export const GrpcClient = {
     CreateUser: promisifyGrpc<any, any>(userClient, 'CreateUser'),
     UpdateUser: promisifyGrpc<any, any>(userClient, 'UpdateUser'),
     DeleteUser: promisifyGrpc<any, any>(userClient, 'DeleteUser'),
+  },
+  TeamService: {
+    ListTeams: promisifyGrpc<any, any>(teamClient, 'ListTeams'),
+    CreateTeam: promisifyGrpc<any, any>(teamClient, 'CreateTeam'),
+    UpdateTeam: promisifyGrpc<any, any>(teamClient, 'UpdateTeam'),
+    DeleteTeam: promisifyGrpc<any, any>(teamClient, 'DeleteTeam'),
+    GetTeam: promisifyGrpc<any, any>(teamClient, 'GetTeam'),
   }
 };
