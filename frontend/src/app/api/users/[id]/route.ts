@@ -23,14 +23,17 @@ export async function PUT(
     const body = await request.json();
     
     // Map fields properly if needed
-    const updateAttrs = {
+    const updateAttrs: any = {
       name: body.name,
       email: body.email,
       phone: body.phone,
       avatar: body.avatar,
-      team_id: body.team_id,
       role_ids: body.role_ids || [],
     };
+    
+    if (body.team_id !== undefined && body.team_id !== null) {
+      updateAttrs.team_id = parseInt(body.team_id);
+    }
 
     const updateRequest = {
       id: id,

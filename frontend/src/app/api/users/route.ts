@@ -50,15 +50,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Create mapping to match CreateUserRequest
-    const createRequest = {
+    const createRequest: any = {
       name: body.name,
       email: body.email,
       password: body.password || "defaultPassword123", // default temp pwd
-      phone: body.phone,
-      avatar: body.avatar,
-      team_id: body.team_id,
       role_ids: body.role_ids || [],
     };
+    
+    if (body.phone) createRequest.phone = body.phone;
+    if (body.avatar) createRequest.avatar = body.avatar;
+    if (body.team_id !== undefined && body.team_id !== null) {
+      createRequest.team_id = parseInt(body.team_id);
+    }
 
     const metadata = getGrpcMetadata(request);
     const response = await GrpcClient.UserService.CreateUser(createRequest, metadata);

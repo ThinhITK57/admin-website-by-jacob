@@ -172,7 +172,7 @@ class UserServiceImpl(user_pb2_grpc.UserServiceServicer if user_pb2_grpc else ob
                 password_hash=hash_password(request.password),
                 phone=request.phone if request.HasField("phone") else None,
                 avatar=request.avatar if request.HasField("avatar") else None,
-                team_id=request.team_id if request.HasField("team_id") else None,
+                team_id=request.team_id if request.HasField("team_id") and request.team_id != 0 else None,
                 created_by=get_current_user_id(),
             )
 
@@ -264,7 +264,7 @@ class UserServiceImpl(user_pb2_grpc.UserServiceServicer if user_pb2_grpc else ob
                 if request.HasField(field):
                     update_data[field] = getattr(request, field)
             if request.HasField("team_id"):
-                update_data["team_id"] = request.team_id
+                update_data["team_id"] = request.team_id if request.team_id != 0 else None
 
             update_data["updated_by"] = get_current_user_id()
 
