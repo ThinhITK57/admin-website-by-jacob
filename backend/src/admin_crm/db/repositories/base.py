@@ -117,7 +117,7 @@ class BaseRepository(Generic[ModelType]):
             return None
 
         for key, value in kwargs.items():
-            if hasattr(instance, key) and value is not None:
+            if hasattr(instance, key):
                 setattr(instance, key, value)
 
         await self.session.flush()

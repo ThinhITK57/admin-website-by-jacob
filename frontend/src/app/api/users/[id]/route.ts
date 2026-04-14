@@ -28,6 +28,7 @@ export async function PUT(
       email: body.email,
       phone: body.phone,
       avatar: body.avatar,
+      status: body.status,
       role_ids: body.role_ids || [],
     };
     
