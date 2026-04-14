@@ -71,7 +71,7 @@ export function Topbar() {
       </div>
 
       {/* Right: Theme + Notification + User */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3.5">
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}

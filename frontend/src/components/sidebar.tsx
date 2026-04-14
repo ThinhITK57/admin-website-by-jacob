@@ -116,7 +116,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-6">
           {NAV_SECTIONS.map((section) => (
             <div key={section.title}>
               {!sidebarCollapsed && (
@@ -127,7 +127,7 @@ export function Sidebar() {
                   {section.title}
                 </p>
               )}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {section.items.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -140,7 +140,7 @@ export function Sidebar() {
                       href={item.href}
                       onClick={() => setSidebarMobile(false)}
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                        "flex items-center gap-3.5 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200",
                         "hover:bg-[var(--color-sidebar-hover)]",
                         isActive &&
                           "bg-[var(--color-sidebar-active)] text-[var(--color-primary-hover)]",
