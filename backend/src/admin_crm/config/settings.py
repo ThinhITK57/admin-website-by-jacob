@@ -41,15 +41,27 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     redis_db: int = 0
 
+    # Optional direct database URL override
+    database_url_override: str | None = None
+
     @property
     def database_url(self) -> str:
         """Build async database URL for SQLAlchemy."""
+        if self.database_url_override:
+            return self.database_url_override
+        # Ensure we connect to PostgreSQL in Docker production
+        if self.app_env.lower() == "production" or self.db_host != "localhost":
+             return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+        
         db_path = Path(__file__).resolve().parents[3] / "local.db"
         return f"sqlite+aiosqlite:///{db_path}"
 
     @property
     def sync_database_url(self) -> str:
         """Build sync database URL for Alembic migrations."""
+        if self.app_env.lower() == "production" or self.db_host != "localhost":
+             return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+             
         db_path = Path(__file__).resolve().parents[3] / "local.db"
         return f"sqlite:///{db_path}"
 

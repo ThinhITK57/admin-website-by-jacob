@@ -1,5 +1,9 @@
 import asyncio
-from admin_crm.db.repositories.base import Base
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
+
+from admin_crm.db.models.base import Base
 from admin_crm.config.database import engine
 
 # Import all models to register with Base.metadata

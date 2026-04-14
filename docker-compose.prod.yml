@@ -36,7 +36,11 @@ services:
     ports:
       - "50051:50051"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-admin_crm}
+      - APP_ENV=production
+      - DB_HOST=db
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - DB_NAME=${POSTGRES_DB:-admin_crm}
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_pass_123}@redis:6379/0
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-super-secret-key-change-in-prod-12345}
       - CORS_ORIGINS=http://localhost:3000
