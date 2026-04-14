@@ -18,7 +18,7 @@ import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 // Mock data for dashboard KPIs
 const KPI_DATA = [
   {
-    title: "Doanh Thu Tháng (Hệ Thống)",
+    title: "Doanh Thu Tháng",
     value: 285000000,
     change: 12.5,
     trend: "up" as const,
@@ -28,7 +28,7 @@ const KPI_DATA = [
     bgColor: "var(--color-success-muted)",
   },
   {
-    title: "Leads Mới (Hệ Thống)",
+    title: "Leads Mới",
     value: 142,
     change: 8.3,
     trend: "up" as const,
@@ -38,7 +38,7 @@ const KPI_DATA = [
     bgColor: "var(--color-primary-muted)",
   },
   {
-    title: "Cuộc Gọi Hôm Nay (Hệ Thống)",
+    title: "Cuộc Gọi Hôm Nay",
     value: 87,
     change: -3.2,
     trend: "down" as const,
@@ -48,7 +48,7 @@ const KPI_DATA = [
     bgColor: "var(--color-accent-muted)",
   },
   {
-    title: "Chi Phí Ads (Hệ Thống)",
+    title: "Chi Phí Ads",
     value: 45000000,
     change: -5.1,
     trend: "down" as const,
@@ -70,6 +70,7 @@ const RECENT_ACTIVITIES = [
 const TOP_PERFORMERS = [
   { name: "Trần Thị Sale1", calls: 45, revenue: 165000000, conversion: 18.5 },
   { name: "Nguyễn Văn Leader", calls: 42, revenue: 120000000, conversion: 22.3 },
+  { name: "Phạm Văn Test", calls: 24, revenue: 35000000, conversion: 12.1 },
 ];
 
 const PIPELINE_DATA = [
@@ -83,129 +84,146 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-3xl font-bold tracking-tight">
           Xin chào, <span className="gradient-text">{user?.name}</span> 👋
         </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--color-muted)" }}>
+        <p className="text-sm mt-1.5" style={{ color: "var(--color-muted)" }}>
           Tổng quan hoạt động kinh doanh hôm nay
         </p>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* KPI Cards Grid - Increased Gap & Hierarchy */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {KPI_DATA.map((kpi, i) => {
           const Icon = kpi.icon;
           return (
             <div
               key={kpi.title}
-              className="card kpi-card p-5 stagger-item cursor-pointer card-interactive"
+              className="card p-6 stagger-item cursor-pointer card-interactive flex flex-col justify-between shadow-lg"
+              style={{
+                borderRadius: "16px",
+              }}
             >
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start justify-between mb-4">
                 <div
-                  className="p-2.5 rounded-xl"
+                  className="p-3 rounded-2xl"
                   style={{ background: kpi.bgColor }}
                 >
-                  <Icon size={20} style={{ color: kpi.color }} />
+                  <Icon size={24} style={{ color: kpi.color }} />
                 </div>
                 <div
-                  className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full"
+                  className="flex items-center gap-1.5 text-sm font-bold px-3 py-1.5 rounded-full shadow-sm"
                   style={{
                     background: kpi.trend === "up" ? "var(--color-success-muted)" : "var(--color-danger-muted)",
                     color: kpi.trend === "up" ? "var(--color-success)" : "var(--color-danger)",
                   }}
                 >
-                  {kpi.trend === "up" ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                  {kpi.trend === "up" ? <ArrowUpRight size={14} strokeWidth={3} /> : <ArrowDownRight size={14} strokeWidth={3} />}
                   {formatPercent(kpi.change)}
                 </div>
               </div>
-              <p
-                className="text-xs font-medium mb-1"
-                style={{ color: "var(--color-muted-foreground)" }}
-              >
-                {kpi.title}
-              </p>
-              <p className="text-2xl font-bold tracking-tight">
-                {kpi.format === "currency"
-                  ? formatCurrency(kpi.value)
-                  : formatNumber(kpi.value)}
-              </p>
+              <div>
+                <p
+                  className="text-[14px] font-semibold mb-1"
+                  style={{ color: "var(--color-muted-foreground)" }}
+                >
+                  {kpi.title}
+                </p>
+                <p className="text-3xl font-extrabold tracking-tight" style={{ lineHeight: "1.2" }}>
+                  {kpi.format === "currency"
+                    ? formatCurrency(kpi.value)
+                    : formatNumber(kpi.value)}
+                </p>
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        {/* Sales Pipeline */}
-        <div className="xl:col-span-2 card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <BarChart3 size={20} className="shrink-0" style={{ color: "var(--color-primary)" }} />
-                <span>Sales Pipeline</span>
-              </h2>
-              <p className="text-xs mt-0.5" style={{ color: "var(--color-muted)" }}>
-                Tổng quan chuyển đổi lead tháng này
-              </p>
+      {/* Main content grid - 2 columns ratio, 24px gap */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+        {/* Left Section (Contains Sales Pipeline + Table as separate blocks) */}
+        <div className="xl:col-span-2 flex flex-col gap-8">
+          
+          {/* Card 1: Sales Pipeline */}
+          <div className="card p-8 shadow-md" style={{ borderRadius: "16px" }}>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <BarChart3 size={24} className="shrink-0" style={{ color: "var(--color-primary)" }} />
+                  <span>Sales Pipeline</span>
+                </h2>
+                <p className="text-sm mt-1" style={{ color: "var(--color-muted)" }}>
+                  Tiến trình chuyển đổi Lead trong tháng hiện tại
+                </p>
+              </div>
+            </div>
+
+            {/* Pipeline bars natively looking like a robust chart */}
+            <div className="space-y-5">
+              {PIPELINE_DATA.map((stage, i) => {
+                const maxCount = Math.max(...PIPELINE_DATA.map((d) => d.count));
+                const width = (stage.count / maxCount) * 100;
+
+                return (
+                  <div key={stage.stage} className="stagger-item">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-base font-semibold">{stage.stage}</span>
+                      <span className="text-lg font-bold">{stage.count}</span>
+                    </div>
+                    <div
+                      className="h-3.5 rounded-full overflow-hidden shadow-inner"
+                      style={{ background: "var(--color-card-hover)" }}
+                    >
+                      <div
+                        className="h-full rounded-full transition-all duration-1000 ease-out shadow-sm"
+                        style={{
+                          width: `${width}%`,
+                          background: `linear-gradient(90deg, ${stage.color}, ${stage.color}CC)`,
+                          animationDelay: `${i * 200}ms`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Pipeline bars */}
-          <div className="space-y-4">
-            {PIPELINE_DATA.map((stage, i) => {
-              const maxCount = Math.max(...PIPELINE_DATA.map((d) => d.count));
-              const width = (stage.count / maxCount) * 100;
+          {/* Card 2: Top Performers */}
+          <div className="card p-8 shadow-md" style={{ borderRadius: "16px" }}>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <TrendingUp size={24} style={{ color: "var(--color-success)" }} />
+                  Top Performers
+                </h3>
+                <p className="text-sm mt-1" style={{ color: "var(--color-muted)" }}>
+                  Bảng xếp hạng hiệu suất nhân sự kinh doanh
+                </p>
+              </div>
+            </div>
 
-              return (
-                <div key={stage.stage} className="stagger-item">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-medium">{stage.stage}</span>
-                    <span className="text-sm font-bold">{stage.count}</span>
-                  </div>
-                  <div
-                    className="h-3 rounded-full overflow-hidden"
-                    style={{ background: "var(--color-card-hover)" }}
-                  >
-                    <div
-                      className="h-full rounded-full transition-all duration-1000 ease-out"
-                      style={{
-                        width: `${width}%`,
-                        background: `linear-gradient(90deg, ${stage.color}, ${stage.color}88)`,
-                        animationDelay: `${i * 200}ms`,
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Top Performers */}
-          <div className="mt-8">
-            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp size={16} style={{ color: "var(--color-success)" }} />
-              Top Performers
-            </h3>
-            <div className="table-container">
-              <table>
+            <div className="table-container rounded-lg overflow-hidden border border-[var(--color-border)]">
+              <table className="w-full">
                 <thead>
-                  <tr>
-                    <th>Nhân viên</th>
-                    <th>Cuộc gọi</th>
-                    <th>Doanh thu</th>
-                    <th className="tooltip" data-tooltip="Tỷ lệ Chuyển Đổi">Tỷ lệ CĐ</th>
+                  <tr style={{ background: "var(--color-card-hover)", height: "48px" }}>
+                    <th className="px-5 py-3 text-left text-sm text-[var(--color-muted-foreground)] font-semibold">Nhân viên</th>
+                    <th className="px-5 py-3 text-left text-sm text-[var(--color-muted-foreground)] font-semibold">Cuộc gọi</th>
+                    <th className="px-5 py-3 text-left text-sm text-[var(--color-muted-foreground)] font-semibold">Doanh thu</th>
+                    <th className="px-5 py-3 text-left text-sm text-[var(--color-muted-foreground)] font-semibold">Tỷ lệ CĐ</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-[var(--color-border)]">
                   {TOP_PERFORMERS.map((p, i) => (
-                    <tr key={p.name} className="stagger-item">
-                      <td>
-                        <div className="flex items-center gap-2.5">
+                    <tr key={p.name} className="stagger-item hover:bg-[var(--color-sidebar-hover)] transition-colors h-[64px]">
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
                           <div
-                            className="avatar avatar-sm text-xs shrink-0"
+                            className="avatar avatar-md font-bold shrink-0"
                             style={{
                               background: `hsl(${i * 120}, 70%, 50%, 0.15)`,
                               color: `hsl(${i * 120}, 70%, 60%)`,
@@ -213,14 +231,18 @@ export default function DashboardPage() {
                           >
                             {p.name.charAt(0)}
                           </div>
-                          <span className="font-medium truncate max-w-[120px] sm:max-w-none">{p.name}</span>
+                          <span className="font-semibold text-[15px]">{p.name}</span>
                         </div>
                       </td>
-                      <td className="font-medium">{p.calls}</td>
-                      <td className="font-medium">{formatCurrency(p.revenue)}</td>
-                      <td>
+                      <td className="px-5 py-3">
+                        <span className="font-semibold text-[15px]">{p.calls}</span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="font-semibold text-[15px] text-[var(--color-success)]">{formatCurrency(p.revenue)}</span>
+                      </td>
+                      <td className="px-5 py-3">
                         <span
-                          className="badge"
+                          className="px-3 py-1.5 rounded-full text-xs font-bold"
                           style={{
                             background: p.conversion > 15 ? "var(--color-success-muted)" : "var(--color-warning-muted)",
                             color: p.conversion > 15 ? "var(--color-success)" : "var(--color-warning)",
@@ -237,59 +259,49 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold flex items-center gap-2 mb-6">
-            <Activity size={20} style={{ color: "var(--color-accent)" }} />
-            Hoạt Động Gần Đây
-          </h2>
+        {/* Right Section: Recent Activity */}
+        <div className="card p-8 shadow-md h-full" style={{ borderRadius: "16px" }}>
+          <div>
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+              <Activity size={24} style={{ color: "var(--color-accent)" }} />
+              Hoạt Động Gần Đây
+            </h2>
+            <p className="text-sm mb-8" style={{ color: "var(--color-muted)" }}>
+              Cập nhật nhật ký theo thời gian thực
+            </p>
+          </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             {RECENT_ACTIVITIES.map((activity, i) => (
               <div
                 key={i}
-                className="flex gap-3 stagger-item group"
+                className="relative pl-6 before:absolute before:left-[11px] before:top-2 before:bottom-[-24px] last:before:hidden before:w-px before:bg-[var(--color-border)] stagger-item"
               >
-                {/* Timeline dot */}
-                <div className="flex flex-col items-center pt-1">
+                <div
+                  className="absolute left-0 top-1.5 w-6 h-6 rounded-full border-4 flex items-center justify-center bg-[var(--color-card)]"
+                  style={{
+                    borderColor: "var(--color-background)",
+                  }}
+                >
                   <div
-                    className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform group-hover:scale-125"
+                    className="w-2.5 h-2.5 rounded-full"
                     style={{
                       background:
-                        activity.type === "lead"
-                          ? "var(--color-primary)"
-                          : activity.type === "campaign"
-                          ? "var(--color-warning)"
-                          : activity.type === "approve"
-                          ? "var(--color-success)"
-                          : activity.type === "call"
-                          ? "var(--color-accent)"
-                          : "var(--color-muted)",
+                        activity.type === "lead" ? "var(--color-primary)" :
+                        activity.type === "campaign" ? "var(--color-accent)" :
+                        activity.type === "approve" ? "var(--color-success)" :
+                        "var(--color-muted)",
+                      boxShadow: "0 0 10px currentColor"
                     }}
                   />
-                  {i < RECENT_ACTIVITIES.length - 1 && (
-                    <div
-                      className="w-px flex-1 mt-1"
-                      style={{ background: "var(--color-border)" }}
-                    />
-                  )}
                 </div>
-
-                {/* Content */}
-                <div className="pb-4 min-w-0">
-                  <p className="text-sm leading-snug">
-                    <span className="font-medium">{activity.user}</span>{" "}
-                    <span style={{ color: "var(--color-muted-foreground)" }}>
-                      {activity.action}
-                    </span>{" "}
-                    <span className="font-medium" style={{ color: "var(--color-primary)" }}>
-                      {activity.target}
-                    </span>
+                <div>
+                  <p className="text-[15px] leading-relaxed">
+                    <span className="font-bold">{activity.user}</span>{" "}
+                    <span style={{ color: "var(--color-muted-foreground)" }}>{activity.action}</span>{" "}
+                    <span className="font-semibold text-white">{activity.target}</span>
                   </p>
-                  <p
-                    className="text-xs mt-0.5"
-                    style={{ color: "var(--color-muted)" }}
-                  >
+                  <p className="text-xs mt-1 font-medium" style={{ color: "var(--color-muted)" }}>
                     {activity.time}
                   </p>
                 </div>

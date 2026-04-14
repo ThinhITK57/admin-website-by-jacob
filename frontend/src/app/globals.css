@@ -39,9 +39,9 @@
   --color-danger: #ef4444;
   --color-danger-muted: rgba(239, 68, 68, 0.15);
 
-  /* Sidebar */
-  --color-sidebar: #0d0d14;
-  --color-sidebar-hover: #1a1a2e;
+  /* Sidebar (Separated contrast from background) */
+  --color-sidebar: #13131c; 
+  --color-sidebar-hover: #1c1c28;
   --color-sidebar-active: rgba(99, 102, 241, 0.2);
 
   /* Radii */
