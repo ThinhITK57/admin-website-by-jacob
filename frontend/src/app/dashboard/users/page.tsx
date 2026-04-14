@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -9,17 +9,10 @@ import {
   Trash2,
   Shield,
   X,
+  RefreshCw
 } from "lucide-react";
 import { cn, getInitials, getStatusColor, formatDate } from "@/lib/utils";
-
-// Mock users data
-const MOCK_USERS = [
-  { id: 1, name: "Super Admin", email: "admin@company.vn", phone: "0900000001", status: "active", team_name: "", roles: ["super_admin"], created_at: "2026-04-01T08:00:00Z" },
-  { id: 2, name: "Nguyễn Văn Leader", email: "leader.sale@company.vn", phone: "0900000002", status: "active", team_name: "Team Sale Telesale 1", roles: ["leader"], created_at: "2026-04-01T08:00:00Z" },
-  { id: 3, name: "Trần Thị Sale1", email: "sale1@company.vn", phone: "0900000003", status: "active", team_name: "Team Sale Telesale 1", roles: ["nhan_vien"], created_at: "2026-04-02T08:00:00Z" },
-  { id: 4, name: "Lê Văn Ads", email: "ads@company.vn", phone: "0900000004", status: "active", team_name: "Team Marketing Ads", roles: ["nhan_vien"], created_at: "2026-04-02T08:00:00Z" },
-  { id: 5, name: "Phạm Thị HR", email: "hr@company.vn", phone: "0900000005", status: "inactive", team_name: "", roles: ["nhan_vien"], created_at: "2026-04-05T08:00:00Z" },
-];
+import { api } from "@/lib/api-client";
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: "Super Admin",
@@ -29,14 +22,116 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function UsersPage() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredUsers = MOCK_USERS.filter((u) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
+    status: "active",
+    roles: ["nhan_vien"],
+    team_id: ""
+  });
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    const res = await api.get<any>("/users");
+    if (res.data?.users) {
+      setUsers(res.data.users);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa user này?")) return;
+    const res = await api.delete(`/users/${id}`);
+    if (res.status === 200 || res.status === 204 || res.data) {
+      fetchUsers();
+    } else {
+      alert("Xóa thất bại!");
+    }
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      ...formData,
+      team_id: formData.team_id ? parseInt(formData.team_id) : undefined,
+      role_ids: formData.roles.map((r: string) => {
+        if (r === "super_admin" || r === "Admin") return 1;
+        if (r === "truong_phong" || r === "Manager") return 2;
+        if (r === "leader" || r === "Leader") return 3;
+        return 4; // nhan_vien or Sale
+      }),
+    };
+    
+    const res = await api.post("/users", payload);
+    if (res.data) {
+      setShowCreateModal(false);
+      fetchUsers();
+    } else {
+      alert(res.error || "Có lỗi xảy ra khi thêm user");
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    
+    const payload = {
+      ...formData,
+      team_id: formData.team_id ? parseInt(formData.team_id) : undefined,
+      role_ids: formData.roles.map((r: string) => {
+        if (r === "super_admin" || r === "Admin") return 1;
+        if (r === "truong_phong" || r === "Manager") return 2;
+        if (r === "leader" || r === "Leader") return 3;
+        return 4; // nhan_vien or Sale
+      }),
+    };
+    
+    const res = await api.put(`/users/${editingUser.id}`, payload);
+    if (res.data) {
+      setShowEditModal(false);
+      fetchUsers();
+    } else {
+      alert(res.error || "Có lỗi xảy ra khi cập nhật user");
+    }
+  };
+
+  const openCreateModal = () => {
+    setFormData({ name: "", email: "", password: "", phone: "", status: "active", roles: ["nhan_vien"], team_id: "" });
+    setShowCreateModal(true);
+  };
+
+  const openEditModal = (user: any) => {
+    setEditingUser(user);
+    setFormData({
+      name: user.name || "",
+      email: user.email || "",
+      password: "", // leave blank for no change usually, but requires logic
+      phone: user.phone || "",
+      status: user.status || "active",
+      roles: user.roles?.map((r: any) => r.name || r) || ["nhan_vien"],
+      team_id: user.team_id ? String(user.team_id) : ""
+    });
+    setShowEditModal(true);
+  };
+
+  const filteredUsers = users.filter((u) => {
     const matchSearch =
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
+      (u.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.email || "").toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || u.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -48,15 +143,20 @@ export default function UsersPage() {
         <div>
           <h1 className="text-2xl font-bold">Quản Lý Người Dùng</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--color-muted)" }}>
-            {MOCK_USERS.length} người dùng trong hệ thống
+            {users.length} người dùng trong hệ thống
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn btn-primary"
-        >
-          <Plus size={16} /> Thêm Người Dùng
-        </button>
+        <div className="flex gap-2">
+          <button onClick={fetchUsers} className="btn btn-outline" title="Tải lại">
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="btn btn-primary"
+          >
+            <Plus size={16} /> Thêm Người Dùng
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -107,7 +207,11 @@ export default function UsersPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user) => (
+            {loading ? (
+              <tr><td colSpan={7} className="text-center py-4">Đang tải...</td></tr>
+            ) : filteredUsers.length === 0 ? (
+              <tr><td colSpan={7} className="text-center py-4">Không có dữ liệu</td></tr>
+            ) : filteredUsers.map((user) => (
               <tr key={user.id} className="stagger-item">
                 <td>
                   <div className="flex items-center gap-3">
@@ -118,7 +222,7 @@ export default function UsersPage() {
                         color: "var(--color-primary)",
                       }}
                     >
-                      {getInitials(user.name)}
+                      {getInitials(user.name || "")}
                     </div>
                     <div>
                       <p className="font-medium">{user.name}</p>
@@ -132,15 +236,18 @@ export default function UsersPage() {
                   <span className="text-sm">{user.email}</span>
                 </td>
                 <td>
-                  {user.roles.map((role) => (
-                    <span
-                      key={role}
-                      className="badge badge-primary mr-1"
-                    >
-                      <Shield size={10} className="mr-1" />
-                      {ROLE_LABELS[role] || role}
-                    </span>
-                  ))}
+                  {((user.roles || []) as any[]).map((roleObj: any) => {
+                     const role = typeof roleObj === "string" ? roleObj : roleObj.name;
+                     return (
+                      <span
+                        key={role}
+                        className="badge badge-primary mr-1"
+                      >
+                        <Shield size={10} className="mr-1" />
+                        {ROLE_LABELS[role] || role}
+                      </span>
+                     )
+                  })}
                 </td>
                 <td>
                   <span className="text-sm">
@@ -153,14 +260,15 @@ export default function UsersPage() {
                   </span>
                 </td>
                 <td className="text-sm" style={{ color: "var(--color-muted-foreground)" }}>
-                  {formatDate(user.created_at)}
+                  {user.created_at ? formatDate(user.created_at) : "N/A"}
                 </td>
                 <td>
                   <div className="flex items-center gap-1">
-                    <button className="btn btn-ghost btn-sm p-1.5" title="Chỉnh sửa">
+                    <button onClick={() => openEditModal(user)} className="btn btn-ghost btn-sm p-1.5" title="Chỉnh sửa">
                       <Edit2 size={14} />
                     </button>
                     <button
+                      onClick={() => handleDelete(user.id)}
                       className="btn btn-ghost btn-sm p-1.5"
                       title="Xóa"
                       style={{ color: "var(--color-danger)" }}
@@ -175,56 +283,43 @@ export default function UsersPage() {
         </table>
       </div>
 
-      {/* Pagination */}
-      <div
-        className="flex items-center justify-between text-sm"
-        style={{ color: "var(--color-muted-foreground)" }}
-      >
-        <span>Hiển thị {filteredUsers.length} / {MOCK_USERS.length} người dùng</span>
-        <div className="flex gap-2">
-          <button className="btn btn-outline btn-sm" disabled>← Trước</button>
-          <button className="btn btn-primary btn-sm">1</button>
-          <button className="btn btn-outline btn-sm">Sau →</button>
-        </div>
-      </div>
-
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+      {/* Modals */}
+      {(showCreateModal || showEditModal) && (
+        <div className="modal-overlay" onClick={() => { setShowCreateModal(false); setShowEditModal(false); }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Thêm Người Dùng Mới</h2>
+              <h2 className="text-lg font-semibold">{showCreateModal ? "Thêm Người Dùng" : "Sửa Người Dùng"}</h2>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => { setShowCreateModal(false); setShowEditModal(false); }}
                 className="btn btn-ghost btn-sm p-1.5"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form className="space-y-4">
+            <form onSubmit={showCreateModal ? handleCreateSubmit : handleEditSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Họ tên *</label>
-                <input className="input" placeholder="Nguyễn Văn A" />
+                <input required className="input" placeholder="Nguyễn Văn A" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email *</label>
-                <input className="input" type="email" placeholder="email@company.vn" />
+                <input required className="input" type="email" placeholder="email@company.vn" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} disabled={showEditModal} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Mật khẩu *</label>
-                  <input className="input" type="password" placeholder="••••••••" />
+                  <label className="text-sm font-medium">Mật khẩu {showCreateModal ? "*" : ""}</label>
+                  <input required={showCreateModal} className="input" type="password" placeholder={showEditModal ? "Để trống nếu không đổi" : "••••••••"} value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Số điện thoại</label>
-                  <input className="input" placeholder="09xxxxxxxx" />
+                  <input className="input" placeholder="09xxxxxxxx" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Vai trò</label>
-                  <select className="input">
+                  <select className="input" value={formData.roles[0]} onChange={(e) => setFormData({...formData, roles: [e.target.value]})}>
                     <option value="nhan_vien">Nhân Viên</option>
                     <option value="leader">Leader</option>
                     <option value="truong_phong">Trưởng Phòng</option>
@@ -232,11 +327,11 @@ export default function UsersPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Team</label>
-                  <select className="input">
-                    <option value="">-- Chọn team --</option>
-                    <option value="1">Team Sale Telesale 1</option>
-                    <option value="2">Team Marketing Ads</option>
+                  <label className="text-sm font-medium">Trạng thái</label>
+                  <select className="input" value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+                    <option value="active">Hoạt động</option>
+                    <option value="inactive">Tạm dừng</option>
+                    <option value="suspended">Bị khóa</option>
                   </select>
                 </div>
               </div>
@@ -244,13 +339,13 @@ export default function UsersPage() {
               <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: "var(--color-border)" }}>
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => { setShowCreateModal(false); setShowEditModal(false); }}
                   className="btn btn-outline"
                 >
                   Hủy
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  <Plus size={16} /> Tạo Người Dùng
+                  {showCreateModal ? <><Plus size={16} /> Tạo Mới</> : "Cập Nhật"}
                 </button>
               </div>
             </form>

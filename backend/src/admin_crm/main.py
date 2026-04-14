@@ -41,7 +41,7 @@ async def serve() -> None:
 
     logger.info(
         "server_started",
-        message=f"🚀 gRPC server listening on {settings.grpc_host}:{settings.grpc_port}",
+        message=f"gRPC server listening on {settings.grpc_host}:{settings.grpc_port}",
     )
 
     # Graceful shutdown handler

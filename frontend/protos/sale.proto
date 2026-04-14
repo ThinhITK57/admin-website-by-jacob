@@ -1,0 +1,209 @@
+syntax = "proto3";
+
+package admin_crm;
+
+import "common.proto";
+
+option java_multiple_files = true;
+
+// =============================================
+// TELESALE SERVICE - Sale Staff, Leads, Calls
+// =============================================
+
+service TelesaleService {
+  // Sale Staff
+  rpc GetSaleStaff (IdRequest) returns (SaleStaffResponse);
+  rpc ListSaleStaff (ListFilter) returns (ListSaleStaffResponse);
+  rpc UpdateSaleStaff (UpdateSaleStaffRequest) returns (SaleStaffResponse);
+
+  // Leads
+  rpc CreateLead (CreateLeadRequest) returns (LeadResponse);
+  rpc GetLead (IdRequest) returns (LeadResponse);
+  rpc ListLeads (ListFilter) returns (ListLeadsResponse);
+  rpc UpdateLead (UpdateLeadRequest) returns (LeadResponse);
+  rpc DeleteLead (IdRequest) returns (StatusResponse);
+  rpc ConvertLeadToOpportunity (ConvertLeadRequest) returns (OpportunityResponse);
+
+  // Calls
+  rpc CreateCall (CreateCallRequest) returns (CallResponse);
+  rpc ListCalls (ListFilter) returns (ListCallsResponse);
+
+  // Opportunities & Deals
+  rpc ListOpportunities (ListFilter) returns (ListOpportunitiesResponse);
+  rpc UpdateOpportunity (UpdateOpportunityRequest) returns (OpportunityResponse);
+  rpc CloseDeal (CloseDealRequest) returns (DealResponse);
+
+  // Performance / Reports
+  rpc GetSalePerformance (SalePerformanceRequest) returns (SalePerformanceResponse);
+}
+
+// --- Sale Staff ---
+
+message SaleStaffResponse {
+  int64 id = 1;
+  int64 user_id = 2;
+  string user_name = 3;
+  string user_email = 4;
+  string team_name = 5;
+  double target_revenue_monthly = 6;
+  double commission_rate = 7;
+  string created_at = 8;
+}
+
+message ListSaleStaffResponse {
+  repeated SaleStaffResponse staff = 1;
+  PaginationResponse pagination = 2;
+}
+
+message UpdateSaleStaffRequest {
+  int64 id = 1;
+  optional double target_revenue_monthly = 2;
+  optional double commission_rate = 3;
+}
+
+// --- Leads ---
+
+message CreateLeadRequest {
+  string name = 1;
+  string phone = 2;
+  optional string email = 3;
+  optional string source = 4;
+  optional int64 assigned_to = 5;
+  optional int64 team_id = 6;
+}
+
+message UpdateLeadRequest {
+  int64 id = 1;
+  optional string name = 2;
+  optional string phone = 3;
+  optional string email = 4;
+  optional string source = 5;
+  optional string status = 6;  // new, contacted, qualified, unqualified, converted
+  optional int64 assigned_to = 7;
+  optional int64 team_id = 8;
+}
+
+message LeadResponse {
+  int64 id = 1;
+  string name = 2;
+  string phone = 3;
+  string email = 4;
+  string source = 5;
+  string status = 6;
+  optional int64 assigned_to = 7;
+  optional string assigned_to_name = 8;
+  optional int64 team_id = 9;
+  optional string team_name = 10;
+  string created_at = 11;
+  string updated_at = 12;
+}
+
+message ListLeadsResponse {
+  repeated LeadResponse leads = 1;
+  PaginationResponse pagination = 2;
+}
+
+message ConvertLeadRequest {
+  int64 lead_id = 1;
+  double value = 2;
+  optional string stage = 3;
+  optional int32 probability = 4;
+  optional string expected_close_date = 5;
+}
+
+// --- Calls ---
+
+message CreateCallRequest {
+  int64 lead_id = 1;
+  string call_time = 2;
+  int32 duration_seconds = 3;
+  string result = 4;  // answered, no-answer, busy, voicemail
+  optional string note = 5;
+}
+
+message CallResponse {
+  int64 id = 1;
+  int64 sale_id = 2;
+  string sale_name = 3;
+  int64 lead_id = 4;
+  string lead_name = 5;
+  string call_time = 6;
+  int32 duration_seconds = 7;
+  string result = 8;
+  string note = 9;
+  string created_at = 10;
+}
+
+message ListCallsResponse {
+  repeated CallResponse calls = 1;
+  PaginationResponse pagination = 2;
+}
+
+// --- Opportunities & Deals ---
+
+message OpportunityResponse {
+  int64 id = 1;
+  int64 lead_id = 2;
+  string lead_name = 3;
+  double value = 4;
+  string stage = 5;
+  int32 probability = 6;
+  string expected_close_date = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}
+
+message ListOpportunitiesResponse {
+  repeated OpportunityResponse opportunities = 1;
+  PaginationResponse pagination = 2;
+}
+
+message UpdateOpportunityRequest {
+  int64 id = 1;
+  optional double value = 2;
+  optional string stage = 3;
+  optional int32 probability = 4;
+  optional string expected_close_date = 5;
+}
+
+message CloseDealRequest {
+  int64 opportunity_id = 1;
+  string status = 2;  // won, lost
+  optional double actual_revenue = 3;
+}
+
+message DealResponse {
+  int64 id = 1;
+  int64 opportunity_id = 2;
+  string status = 3;
+  double actual_revenue = 4;
+  string closed_at = 5;
+  string created_at = 6;
+}
+
+// --- Performance ---
+
+message SalePerformanceRequest {
+  optional int64 user_id = 1;
+  optional int64 team_id = 2;
+  string start_date = 3;
+  string end_date = 4;
+}
+
+message SalePerformanceResponse {
+  int32 total_calls = 1;
+  int32 total_leads = 2;
+  int32 qualified_leads = 3;
+  int32 total_opportunities = 4;
+  int32 total_deals_won = 5;
+  double total_revenue = 6;
+  double conversion_rate = 7;  // leads → deals %
+  repeated DailyMetric daily_metrics = 8;
+}
+
+message DailyMetric {
+  string date = 1;
+  int32 calls = 2;
+  int32 new_leads = 3;
+  double revenue = 4;
+}

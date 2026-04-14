@@ -26,6 +26,19 @@ class SaleStaffRepository(BaseRepository[SaleStaff]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_by_id(self, id: int, options=None):
+        from admin_crm.db.models.user import User
+        opts = options or []
+        opts.extend([selectinload(SaleStaff.user).selectinload(User.team)])
+        return await super().get_by_id(id, options=opts)
+
+    async def get_all(self, **kwargs):
+        from admin_crm.db.models.user import User
+        opts = kwargs.get("options", [])
+        opts.extend([selectinload(SaleStaff.user).selectinload(User.team)])
+        kwargs["options"] = opts
+        return await super().get_all(**kwargs)
+
 
 class LeadRepository(BaseRepository[Lead]):
     """Repository for Lead operations."""
@@ -77,6 +90,17 @@ class LeadRepository(BaseRepository[Lead]):
         result = await self.session.execute(query)
         return {row[0]: row[1] for row in result.all()}
 
+    async def get_by_id(self, id: int, options=None):
+        opts = options or []
+        opts.extend([selectinload(Lead.assignee), selectinload(Lead.team)])
+        return await super().get_by_id(id, options=opts)
+
+    async def get_all(self, **kwargs):
+        opts = kwargs.get("options", [])
+        opts.extend([selectinload(Lead.assignee), selectinload(Lead.team)])
+        kwargs["options"] = opts
+        return await super().get_all(**kwargs)
+
 
 class CallRepository(BaseRepository[Call]):
     """Repository for Call operations."""
@@ -98,12 +122,34 @@ class CallRepository(BaseRepository[Call]):
         result = await self.session.execute(query)
         return result.scalar() or 0
 
+    async def get_by_id(self, id: int, options=None):
+        opts = options or []
+        opts.extend([selectinload(Call.sale), selectinload(Call.lead)])
+        return await super().get_by_id(id, options=opts)
+
+    async def get_all(self, **kwargs):
+        opts = kwargs.get("options", [])
+        opts.extend([selectinload(Call.sale), selectinload(Call.lead)])
+        kwargs["options"] = opts
+        return await super().get_all(**kwargs)
+
 
 class OpportunityRepository(BaseRepository[Opportunity]):
     """Repository for Opportunity operations."""
 
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(Opportunity, session)
+
+    async def get_by_id(self, id: int, options=None):
+        opts = options or []
+        opts.extend([selectinload(Opportunity.lead)])
+        return await super().get_by_id(id, options=opts)
+
+    async def get_all(self, **kwargs):
+        opts = kwargs.get("options", [])
+        opts.extend([selectinload(Opportunity.lead)])
+        kwargs["options"] = opts
+        return await super().get_all(**kwargs)
 
 
 class DealRepository(BaseRepository[Deal]):

@@ -44,18 +44,14 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         """Build async database URL for SQLAlchemy."""
-        return (
-            f"postgresql+asyncpg://{self.db_user}:{self.db_password}"
-            f"@{self.db_host}:{self.db_port}/{self.db_name}"
-        )
+        db_path = Path(__file__).resolve().parents[3] / "local.db"
+        return f"sqlite+aiosqlite:///{db_path}"
 
     @property
     def sync_database_url(self) -> str:
         """Build sync database URL for Alembic migrations."""
-        return (
-            f"postgresql://{self.db_user}:{self.db_password}"
-            f"@{self.db_host}:{self.db_port}/{self.db_name}"
-        )
+        db_path = Path(__file__).resolve().parents[3] / "local.db"
+        return f"sqlite:///{db_path}"
 
     @property
     def is_development(self) -> bool:

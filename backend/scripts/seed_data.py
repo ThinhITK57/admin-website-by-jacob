@@ -46,11 +46,11 @@ async def seed_roles(session) -> dict[str, int]:
         existing = await repo.get_by_name(name)
         if existing:
             role_map[name] = existing.id
-            logger.info(f"  ✓ Role '{name}' already exists (id={existing.id})")
+            logger.info(f"  [OK] Role '{name}' already exists (id={existing.id})")
         else:
             role = await repo.create(name=name, description=desc, guard_name="web")
             role_map[name] = role.id
-            logger.info(f"  + Role '{name}' created (id={role.id})")
+            logger.info(f"  [NEW] Role '{name}' created (id={role.id})")
 
     return role_map
 
@@ -98,7 +98,7 @@ async def seed_permissions(session) -> dict[str, int]:
             perm = await repo.create(name=name, description=desc, guard_name="web")
             perm_map[name] = perm.id
 
-    logger.info(f"  ✓ {len(perm_map)} permissions seeded")
+    logger.info(f"  [OK] {len(perm_map)} permissions seeded")
     return perm_map
 
 
@@ -109,13 +109,13 @@ async def assign_role_permissions(session, role_map, perm_map):
     # Super Admin: ALL permissions
     all_perm_ids = list(perm_map.values())
     await repo.assign_permissions(role_map["super_admin"], all_perm_ids)
-    logger.info(f"  ✓ super_admin: {len(all_perm_ids)} permissions")
+    logger.info(f"  [OK] super_admin: {len(all_perm_ids)} permissions")
 
     # Trưởng phòng: Hầu hết trừ quản lý User/Role
     tp_exclude = {"user.create", "user.delete", "role.create", "role.delete", "permission.assign"}
     tp_perms = [pid for name, pid in perm_map.items() if name not in tp_exclude]
     await repo.assign_permissions(role_map["truong_phong"], tp_perms)
-    logger.info(f"  ✓ truong_phong: {len(tp_perms)} permissions")
+    logger.info(f"  [OK] truong_phong: {len(tp_perms)} permissions")
 
     # Leader: sale + campaign view + report
     leader_perms_names = [
@@ -125,13 +125,13 @@ async def assign_role_permissions(session, role_map, perm_map):
     ]
     leader_perms = [perm_map[n] for n in leader_perms_names if n in perm_map]
     await repo.assign_permissions(role_map["leader"], leader_perms)
-    logger.info(f"  ✓ leader: {len(leader_perms)} permissions")
+    logger.info(f"  [OK] leader: {len(leader_perms)} permissions")
 
     # Nhân viên: basic view + create
     nv_perms_names = ["sale.view", "sale.create", "campaign.view", "dashboard.view"]
     nv_perms = [perm_map[n] for n in nv_perms_names if n in perm_map]
     await repo.assign_permissions(role_map["nhan_vien"], nv_perms)
-    logger.info(f"  ✓ nhan_vien: {len(nv_perms)} permissions")
+    logger.info(f"  [OK] nhan_vien: {len(nv_perms)} permissions")
 
 
 async def seed_teams(session) -> dict[str, int]:
@@ -147,11 +147,11 @@ async def seed_teams(session) -> dict[str, int]:
         existing_teams, _ = await repo.get_all(filters={"name": name})
         if existing_teams:
             team_map[name] = existing_teams[0].id
-            logger.info(f"  ✓ Team '{name}' already exists")
+            logger.info(f"  [OK] Team '{name}' already exists")
         else:
             team = await repo.create(name=name, description=desc)
             team_map[name] = team.id
-            logger.info(f"  + Team '{name}' created (id={team.id})")
+            logger.info(f"  [NEW] Team '{name}' created (id={team.id})")
 
     return team_map
 
@@ -195,7 +195,7 @@ async def seed_users(session, role_map, team_map) -> dict[str, int]:
         existing = await user_repo.get_by_email(u["email"])
         if existing:
             user_map[u["email"]] = existing.id
-            logger.info(f"  ✓ User '{u['email']}' already exists")
+            logger.info(f"  [OK] User '{u['email']}' already exists")
         else:
             user = await user_repo.create(
                 name=u["name"],
@@ -205,7 +205,7 @@ async def seed_users(session, role_map, team_map) -> dict[str, int]:
                 team_id=team_map.get(u["team"]) if u["team"] else None,
             )
             user_map[u["email"]] = user.id
-            logger.info(f"  + User '{u['email']}' created (id={user.id})")
+            logger.info(f"  [NEW] User '{u['email']}' created (id={user.id})")
 
         # Assign role
         role_id = role_map.get(u["role"])
@@ -236,7 +236,7 @@ async def seed_sample_data(session, user_map, team_map):
                     target_revenue_monthly=target,
                     commission_rate=commission,
                 )
-                logger.info(f"  + SaleStaff for '{email}' created")
+                logger.info(f"  [NEW] SaleStaff for '{email}' created")
 
     # Leads
     lead_repo = LeadRepository(session)
@@ -261,7 +261,7 @@ async def seed_sample_data(session, user_map, team_map):
                 created_by=user_map.get("admin@company.vn"),
             )
 
-    logger.info(f"  ✓ {len(leads_data)} leads seeded")
+    logger.info(f"  [OK] {len(leads_data)} leads seeded")
 
     # Campaign
     campaign_repo = CampaignRepository(session)
@@ -302,13 +302,13 @@ async def seed_sample_data(session, user_map, team_map):
                     revenue=12_500_000,
                 )
 
-    logger.info(f"  ✓ {len(campaigns_data)} campaigns seeded")
+    logger.info(f"  [OK] {len(campaigns_data)} campaigns seeded")
 
 
 async def run_seed():
     """Run all seed operations."""
     logger.info("=" * 50)
-    logger.info("🌱 STARTING SEED DATA")
+    logger.info("STARTING SEED DATA")
     logger.info("=" * 50)
 
     settings = get_settings()
@@ -319,38 +319,38 @@ async def run_seed():
 
     async with async_session_factory() as session:
         try:
-            logger.info("\n📋 Seeding Roles...")
+            logger.info("\n[1/6] Seeding Roles...")
             role_map = await seed_roles(session)
 
-            logger.info("\n🔑 Seeding Permissions...")
+            logger.info("\n[2/6] Seeding Permissions...")
             perm_map = await seed_permissions(session)
 
-            logger.info("\n🔗 Assigning Permissions to Roles...")
+            logger.info("\n[3/6] Assigning Permissions to Roles...")
             await assign_role_permissions(session, role_map, perm_map)
 
-            logger.info("\n👥 Seeding Teams...")
+            logger.info("\n[4/6] Seeding Teams...")
             team_map = await seed_teams(session)
 
-            logger.info("\n👤 Seeding Users...")
+            logger.info("\n[5/6] Seeding Users...")
             user_map = await seed_users(session, role_map, team_map)
 
-            logger.info("\n📊 Seeding Sample Data...")
+            logger.info("\n[6/6] Seeding Sample Data...")
             await seed_sample_data(session, user_map, team_map)
 
             await session.commit()
 
             logger.info("\n" + "=" * 50)
-            logger.info("✅ SEED DATA COMPLETED!")
+            logger.info("SEED DATA COMPLETED!")
             logger.info("=" * 50)
             logger.info("\nDefault accounts (password: 'password'):")
-            logger.info("  👑 Super Admin:    admin@company.vn")
-            logger.info("  👔 Leader Sale:    leader.sale@company.vn")
-            logger.info("  👷 Nhân viên Sale: sale1@company.vn")
-            logger.info("  📢 Nhân viên Ads:  ads@company.vn")
+            logger.info("  Super Admin:    admin@company.vn")
+            logger.info("  Leader Sale:    leader.sale@company.vn")
+            logger.info("  Nhan vien Sale: sale1@company.vn")
+            logger.info("  Nhan vien Ads:  ads@company.vn")
 
         except Exception as e:
             await session.rollback()
-            logger.error(f"❌ Seed failed: {e}")
+            logger.error(f"Seed failed: {e}")
             raise
 
 

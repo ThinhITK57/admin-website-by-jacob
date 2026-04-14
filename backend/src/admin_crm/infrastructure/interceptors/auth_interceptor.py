@@ -44,6 +44,8 @@ class AuthInterceptor(grpc.aio.ServerInterceptor):
         # Extract token from metadata
         metadata = dict(handler_call_details.invocation_metadata or [])
         auth_header = metadata.get("authorization", "")
+        
+        logger.debug(f"Auth interceptor received auth_header: {auth_header}")
 
         if not auth_header.startswith("Bearer "):
             logger.warning("missing_or_invalid_auth_header", method=method)

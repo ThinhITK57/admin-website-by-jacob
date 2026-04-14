@@ -1,7 +1,6 @@
 """Activity Log ORM model for audit trail."""
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Integer, DateTime, ForeignKey, String, Text, func, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from admin_crm.db.models.base import Base
@@ -12,17 +11,17 @@ class ActivityLog(Base):
 
     __tablename__ = "activity_log"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     log_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     subject_type: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
-    subject_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    subject_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     causer_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
     causer_id: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
     event: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    properties: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    properties: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

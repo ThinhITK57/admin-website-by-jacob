@@ -20,11 +20,16 @@ class BaseRepository(Generic[ModelType]):
         self.model = model
         self.session = session
 
-    async def get_by_id(self, id: int) -> ModelType | None:
+    async def get_by_id(self, id: int, options: list[Any] | None = None) -> ModelType | None:
         """Get a single record by ID, excluding soft-deleted."""
         query = select(self.model).where(self.model.id == id)
         if hasattr(self.model, "deleted_at"):
             query = query.where(self.model.deleted_at.is_(None))
+        
+        if options:
+            for opt in options:
+                query = query.options(opt)
+                
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -37,6 +42,7 @@ class BaseRepository(Generic[ModelType]):
         filters: dict[str, Any] | None = None,
         search: str | None = None,
         search_fields: list[str] | None = None,
+        options: list[Any] | None = None,
     ) -> tuple[Sequence[ModelType], int]:
         """Get paginated list of records with optional filtering and search.
 
@@ -79,6 +85,11 @@ class BaseRepository(Generic[ModelType]):
         if hasattr(self.model, sort_by):
             sort_col = getattr(self.model, sort_by)
             query = query.order_by(sort_col.desc() if sort_order == "desc" else sort_col.asc())
+
+        # Apply eager loading options
+        if options:
+            for opt in options:
+                query = query.options(opt)
 
         # Apply pagination
         page_size = min(max(page_size, 1), 100)  # Enforce limits

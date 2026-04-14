@@ -1,6 +1,6 @@
 """Team ORM model."""
 
-from sqlalchemy import BigInteger, ForeignKey, String, Text
+from sqlalchemy import Integer, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from admin_crm.db.models.base import BaseModel
@@ -13,7 +13,7 @@ class Team(BaseModel):
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     leader_id: Mapped[int | None] = mapped_column(
-        BigInteger,
+        Integer,
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )

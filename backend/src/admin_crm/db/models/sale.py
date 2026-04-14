@@ -3,7 +3,7 @@
 import enum
 
 from sqlalchemy import (
-    BigInteger,
+    Integer,
     CheckConstraint,
     Date,
     DateTime,
@@ -46,9 +46,9 @@ class SaleStaff(Base, TimestampMixin):
 
     __tablename__ = "sale_staff"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(
-        BigInteger,
+        Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
         unique=True,
         nullable=False,
@@ -77,11 +77,11 @@ class Call(Base):
 
     __tablename__ = "calls"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     sale_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    lead_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    lead_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     call_time: Mapped = mapped_column(DateTime(timezone=True), nullable=False)
     duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     result: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -91,7 +91,7 @@ class Call(Base):
         server_default="now()",
     )
     created_by: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
     # Relationships
@@ -121,10 +121,10 @@ class Lead(BaseModel):
         server_default="new",
     )
     assigned_to: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     team_id: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("teams.id", ondelete="SET NULL"), nullable=True
+        Integer, ForeignKey("teams.id", ondelete="SET NULL"), nullable=True
     )
 
     # Relationships
@@ -146,7 +146,7 @@ class Opportunity(BaseModel):
     __tablename__ = "opportunities"
 
     lead_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("leads.id", ondelete="CASCADE"), nullable=False
+        Integer, ForeignKey("leads.id", ondelete="CASCADE"), nullable=False
     )
     value: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
     stage: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -175,7 +175,7 @@ class Deal(BaseModel):
     __tablename__ = "deals"
 
     opportunity_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False
+        Integer, ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False
     )
     status: Mapped[str] = mapped_column(
         Enum("pending", "won", "lost", name="deal_status", create_type=False),

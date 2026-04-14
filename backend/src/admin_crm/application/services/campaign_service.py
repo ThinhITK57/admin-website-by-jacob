@@ -5,6 +5,17 @@ from datetime import date
 
 import grpc
 
+try:
+    import campaign_pb2
+    import campaign_pb2_grpc
+    import common_pb2
+except ImportError:
+    campaign_pb2 = None
+    campaign_pb2_grpc = object
+    common_pb2 = None
+
+from sqlalchemy.orm import selectinload
+from admin_crm.db.models.campaign import Campaign, AdGroup
 from admin_crm.config.database import async_session_factory
 from admin_crm.db.repositories import (
     AdGroupRepository,
@@ -18,7 +29,7 @@ from admin_crm.utils.logger import get_logger
 logger = get_logger("campaign_service")
 
 
-class CampaignServiceImpl:
+class CampaignServiceImpl(campaign_pb2_grpc.CampaignServiceServicer if campaign_pb2_grpc != object else object):
     """gRPC CampaignService implementation for Ads/Marketing module."""
 
     async def CreateCampaign(self, request, context):
@@ -45,7 +56,7 @@ class CampaignServiceImpl:
             await session.commit()
             campaign = await repo.get_with_relations(campaign.id)
             logger.info("campaign_created", campaign_id=campaign.id)
-            return self._campaign_to_response(campaign)
+            return self._campaign_to_proto(campaign)
 
     async def GetCampaign(self, request, context):
         async with async_session_factory() as session:
@@ -59,21 +70,21 @@ class CampaignServiceImpl:
 
             summary = await metric_repo.get_summary(campaign.id)
 
-            return {
-                "campaign": self._campaign_to_response(campaign),
-                "ad_groups": [
-                    {
-                        "id": ag.id,
-                        "campaign_id": ag.campaign_id,
-                        "name": ag.name or "",
-                        "budget": float(ag.budget or 0),
-                        "ad_count": ag.ad_count,
-                        "created_at": ag.created_at.isoformat() if ag.created_at else "",
-                    }
+            return campaign_pb2.CampaignDetailResponse(
+                campaign=self._campaign_to_proto(campaign),
+                ad_groups=[
+                    campaign_pb2.AdGroupResponse(
+                        id=ag.id,
+                        campaign_id=ag.campaign_id,
+                        name=ag.name or "",
+                        budget=float(ag.budget or 0),
+                        ad_count=getattr(ag, 'ad_count', 0) or 0,
+                        created_at=ag.created_at.isoformat() if ag.created_at else "",
+                    )
                     for ag in (campaign.ad_groups or [])
                 ],
-                "metrics_summary": summary,
-            }
+                metrics_summary=self._summary_to_proto(summary),
+            )
 
     async def ListCampaigns(self, request, context):
         async with async_session_factory() as session:
@@ -94,17 +105,21 @@ class CampaignServiceImpl:
                 filters=filters,
                 search=request.search or None,
                 search_fields=["name"],
+                options=[
+                    selectinload(Campaign.owner),
+                    selectinload(Campaign.ad_groups).selectinload(AdGroup.ads)
+                ],
             )
 
             total_pages = math.ceil(total / page_size) if total > 0 else 1
 
-            return {
-                "campaigns": [self._campaign_to_response(c) for c in campaigns],
-                "pagination": {
-                    "total": total, "page": page,
-                    "page_size": page_size, "total_pages": total_pages,
-                },
-            }
+            return campaign_pb2.ListCampaignsResponse(
+                campaigns=[self._campaign_to_proto(c) for c in campaigns],
+                pagination=common_pb2.PaginationResponse(
+                    total=total, page=page,
+                    page_size=page_size, total_pages=total_pages,
+                ),
+            )
 
     async def UpdateCampaign(self, request, context):
         async with async_session_factory() as session:
@@ -130,7 +145,7 @@ class CampaignServiceImpl:
 
             await session.commit()
             campaign = await repo.get_with_relations(request.id)
-            return self._campaign_to_response(campaign)
+            return self._campaign_to_proto(campaign)
 
     async def DeleteCampaign(self, request, context):
         async with async_session_factory() as session:
@@ -140,7 +155,7 @@ class CampaignServiceImpl:
                 await context.abort(grpc.StatusCode.NOT_FOUND, "Campaign not found")
                 return
             await session.commit()
-            return {"success": True, "message": "Campaign deleted"}
+            return common_pb2.StatusResponse(success=True, message="Campaign deleted")
 
     # --- Ad Groups ---
 
@@ -155,33 +170,33 @@ class CampaignServiceImpl:
             )
 
             await session.commit()
-            return {
-                "id": ad_group.id,
-                "campaign_id": ad_group.campaign_id,
-                "name": ad_group.name or "",
-                "budget": float(ad_group.budget or 0),
-                "ad_count": 0,
-                "created_at": ad_group.created_at.isoformat() if ad_group.created_at else "",
-            }
+            return campaign_pb2.AdGroupResponse(
+                id=ad_group.id,
+                campaign_id=ad_group.campaign_id,
+                name=ad_group.name or "",
+                budget=float(ad_group.budget or 0),
+                ad_count=0,
+                created_at=ad_group.created_at.isoformat() if ad_group.created_at else "",
+            )
 
     async def ListAdGroups(self, request, context):
         async with async_session_factory() as session:
             repo = AdGroupRepository(session)
             ad_groups = await repo.get_by_campaign(request.id)
 
-            return {
-                "ad_groups": [
-                    {
-                        "id": ag.id,
-                        "campaign_id": ag.campaign_id,
-                        "name": ag.name or "",
-                        "budget": float(ag.budget or 0),
-                        "ad_count": ag.ad_count,
-                        "created_at": ag.created_at.isoformat() if ag.created_at else "",
-                    }
+            return campaign_pb2.ListAdGroupsResponse(
+                ad_groups=[
+                    campaign_pb2.AdGroupResponse(
+                        id=ag.id,
+                        campaign_id=ag.campaign_id,
+                        name=ag.name or "",
+                        budget=float(ag.budget or 0),
+                        ad_count=getattr(ag, 'ad_count', 0) or 0,
+                        created_at=ag.created_at.isoformat() if ag.created_at else "",
+                    )
                     for ag in ad_groups
                 ],
-            }
+            )
 
     # --- Ads ---
 
@@ -198,35 +213,35 @@ class CampaignServiceImpl:
             )
 
             await session.commit()
-            return {
-                "id": ad.id,
-                "ad_group_id": ad.ad_group_id,
-                "name": ad.name or "",
-                "creative_url": ad.creative_url or "",
-                "headline": ad.headline or "",
-                "description": ad.description or "",
-                "created_at": ad.created_at.isoformat() if ad.created_at else "",
-            }
+            return campaign_pb2.AdResponse(
+                id=ad.id,
+                ad_group_id=ad.ad_group_id,
+                name=ad.name or "",
+                creative_url=ad.creative_url or "",
+                headline=ad.headline or "",
+                description=ad.description or "",
+                created_at=ad.created_at.isoformat() if ad.created_at else "",
+            )
 
     async def ListAds(self, request, context):
         async with async_session_factory() as session:
             repo = AdRepository(session)
             ads = await repo.get_by_ad_group(request.id)
 
-            return {
-                "ads": [
-                    {
-                        "id": a.id,
-                        "ad_group_id": a.ad_group_id,
-                        "name": a.name or "",
-                        "creative_url": a.creative_url or "",
-                        "headline": a.headline or "",
-                        "description": a.description or "",
-                        "created_at": a.created_at.isoformat() if a.created_at else "",
-                    }
+            return campaign_pb2.ListAdsResponse(
+                ads=[
+                    campaign_pb2.AdResponse(
+                        id=a.id,
+                        ad_group_id=a.ad_group_id,
+                        name=a.name or "",
+                        creative_url=a.creative_url or "",
+                        headline=a.headline or "",
+                        description=a.description or "",
+                        created_at=a.created_at.isoformat() if a.created_at else "",
+                    )
                     for a in ads
                 ],
-            }
+            )
 
     # --- Metrics ---
 
@@ -245,7 +260,7 @@ class CampaignServiceImpl:
             )
 
             await session.commit()
-            return {"success": True, "message": "Metrics updated"}
+            return common_pb2.StatusResponse(success=True, message="Metrics updated")
 
     async def GetCampaignMetrics(self, request, context):
         async with async_session_factory() as session:
@@ -261,36 +276,52 @@ class CampaignServiceImpl:
             )
             summary = await repo.get_summary(request.campaign_id)
 
-            return {
-                "metrics": [
-                    {
-                        "date": str(m.date),
-                        "impressions": int(m.impressions or 0),
-                        "clicks": int(m.clicks or 0),
-                        "cost": float(m.cost or 0),
-                        "conversions": int(m.conversions or 0),
-                        "revenue": float(m.revenue or 0),
-                        "cpc": m.cpc,
-                        "ctr": m.ctr,
-                        "roas": m.roas,
-                    }
+            return campaign_pb2.CampaignMetricsResponse(
+                metrics=[
+                    campaign_pb2.DailyCampaignMetric(
+                        date=str(m.date),
+                        impressions=int(m.impressions or 0),
+                        clicks=int(m.clicks or 0),
+                        cost=float(m.cost or 0),
+                        conversions=int(m.conversions or 0),
+                        revenue=float(m.revenue or 0),
+                        cpc=getattr(m, 'cpc', 0) or 0,
+                        ctr=getattr(m, 'ctr', 0) or 0,
+                        roas=getattr(m, 'roas', 0) or 0,
+                    )
                     for m in metrics
                 ],
-                "summary": summary,
-            }
+                summary=self._summary_to_proto(summary),
+            )
 
     @staticmethod
-    def _campaign_to_response(campaign) -> dict:
-        return {
-            "id": campaign.id,
-            "name": campaign.name or "",
-            "budget": float(campaign.budget or 0),
-            "start_date": str(campaign.start_date) if campaign.start_date else "",
-            "end_date": str(campaign.end_date) if campaign.end_date else "",
-            "channel": campaign.channel or "",
-            "status": campaign.status or "draft",
-            "owner_id": campaign.owner_id or 0,
-            "owner_name": campaign.owner.name if campaign.owner else "",
-            "created_at": campaign.created_at.isoformat() if campaign.created_at else "",
-            "updated_at": campaign.updated_at.isoformat() if campaign.updated_at else "",
-        }
+    def _campaign_to_proto(campaign):
+        return campaign_pb2.CampaignResponse(
+            id=campaign.id,
+            name=campaign.name or "",
+            budget=float(campaign.budget or 0),
+            start_date=str(campaign.start_date) if campaign.start_date else "",
+            end_date=str(campaign.end_date) if campaign.end_date else "",
+            channel=campaign.channel or "",
+            status=campaign.status or "draft",
+            owner_id=campaign.owner_id or 0,
+            owner_name=getattr(campaign, 'owner', None) and campaign.owner.name or "",
+            created_at=campaign.created_at.isoformat() if campaign.created_at else "",
+            updated_at=campaign.updated_at.isoformat() if campaign.updated_at else "",
+        )
+
+    @staticmethod
+    def _summary_to_proto(summary):
+        if not summary or isinstance(summary, dict):
+            s = summary or {}
+            return campaign_pb2.CampaignMetricsSummary(
+                total_impressions=int(s.get("total_impressions", 0)),
+                total_clicks=int(s.get("total_clicks", 0)),
+                total_cost=float(s.get("total_cost", 0)),
+                total_conversions=int(s.get("total_conversions", 0)),
+                total_revenue=float(s.get("total_revenue", 0)),
+                avg_cpc=float(s.get("avg_cpc", 0)),
+                avg_ctr=float(s.get("avg_ctr", 0)),
+                roas=float(s.get("roas", 0)),
+            )
+        return campaign_pb2.CampaignMetricsSummary()

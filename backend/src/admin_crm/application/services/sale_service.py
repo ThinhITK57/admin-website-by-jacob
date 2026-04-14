@@ -5,6 +5,15 @@ from datetime import date, datetime, timezone
 
 import grpc
 
+try:
+    import sale_pb2
+    import sale_pb2_grpc
+    import common_pb2
+except ImportError:
+    sale_pb2 = None
+    sale_pb2_grpc = object
+    common_pb2 = None
+
 from admin_crm.config.database import async_session_factory
 from admin_crm.db.repositories import (
     CallRepository,
@@ -19,7 +28,7 @@ from admin_crm.utils.logger import get_logger
 logger = get_logger("telesale_service")
 
 
-class TelesaleServiceImpl:
+class TelesaleServiceImpl(sale_pb2_grpc.TelesaleServiceServicer if sale_pb2_grpc != object else object):
     """gRPC TelesaleService implementation."""
 
     # --- Sale Staff ---
@@ -31,7 +40,7 @@ class TelesaleServiceImpl:
             if not staff:
                 await context.abort(grpc.StatusCode.NOT_FOUND, "Sale staff not found")
                 return
-            return self._staff_to_response(staff)
+            return self._staff_to_proto(staff)
 
     async def ListSaleStaff(self, request, context):
         async with async_session_factory() as session:
@@ -48,13 +57,13 @@ class TelesaleServiceImpl:
 
             total_pages = math.ceil(total / page_size) if total > 0 else 1
 
-            return {
-                "staff": [self._staff_to_response(s) for s in staff_list],
-                "pagination": {
-                    "total": total, "page": page,
-                    "page_size": page_size, "total_pages": total_pages,
-                },
-            }
+            return sale_pb2.ListSaleStaffResponse(
+                staff=[self._staff_to_proto(s) for s in staff_list],
+                pagination=common_pb2.PaginationResponse(
+                    total=total, page=page,
+                    page_size=page_size, total_pages=total_pages,
+                ),
+            )
 
     async def UpdateSaleStaff(self, request, context):
         async with async_session_factory() as session:
@@ -72,7 +81,7 @@ class TelesaleServiceImpl:
                 return
 
             await session.commit()
-            return self._staff_to_response(staff)
+            return self._staff_to_proto(staff)
 
     # --- Leads ---
 
@@ -80,7 +89,6 @@ class TelesaleServiceImpl:
         async with async_session_factory() as session:
             repo = LeadRepository(session)
 
-            # Check phone uniqueness
             if request.phone:
                 existing = await repo.get_by_phone(request.phone)
                 if existing:
@@ -101,7 +109,7 @@ class TelesaleServiceImpl:
 
             await session.commit()
             logger.info("lead_created", lead_id=lead.id)
-            return self._lead_to_response(lead)
+            return self._lead_to_proto(lead)
 
     async def GetLead(self, request, context):
         async with async_session_factory() as session:
@@ -110,7 +118,7 @@ class TelesaleServiceImpl:
             if not lead:
                 await context.abort(grpc.StatusCode.NOT_FOUND, "Lead not found")
                 return
-            return self._lead_to_response(lead)
+            return self._lead_to_proto(lead)
 
     async def ListLeads(self, request, context):
         async with async_session_factory() as session:
@@ -135,13 +143,13 @@ class TelesaleServiceImpl:
 
             total_pages = math.ceil(total / page_size) if total > 0 else 1
 
-            return {
-                "leads": [self._lead_to_response(l) for l in leads],
-                "pagination": {
-                    "total": total, "page": page,
-                    "page_size": page_size, "total_pages": total_pages,
-                },
-            }
+            return sale_pb2.ListLeadsResponse(
+                leads=[self._lead_to_proto(l) for l in leads],
+                pagination=common_pb2.PaginationResponse(
+                    total=total, page=page,
+                    page_size=page_size, total_pages=total_pages,
+                ),
+            )
 
     async def UpdateLead(self, request, context):
         async with async_session_factory() as session:
@@ -164,7 +172,7 @@ class TelesaleServiceImpl:
                 return
 
             await session.commit()
-            return self._lead_to_response(lead)
+            return self._lead_to_proto(lead)
 
     async def DeleteLead(self, request, context):
         async with async_session_factory() as session:
@@ -174,7 +182,7 @@ class TelesaleServiceImpl:
                 await context.abort(grpc.StatusCode.NOT_FOUND, "Lead not found")
                 return
             await session.commit()
-            return {"success": True, "message": "Lead deleted"}
+            return common_pb2.StatusResponse(success=True, message="Lead deleted")
 
     async def ConvertLeadToOpportunity(self, request, context):
         async with async_session_factory() as session:
@@ -186,10 +194,8 @@ class TelesaleServiceImpl:
                 await context.abort(grpc.StatusCode.NOT_FOUND, "Lead not found")
                 return
 
-            # Update lead status
             lead.status = "converted"
 
-            # Create opportunity
             opp = await opp_repo.create(
                 lead_id=lead.id,
                 value=request.value,
@@ -204,7 +210,7 @@ class TelesaleServiceImpl:
 
             await session.commit()
             logger.info("lead_converted", lead_id=lead.id, opportunity_id=opp.id)
-            return self._opportunity_to_response(opp)
+            return self._opportunity_to_proto(opp)
 
     # --- Calls ---
 
@@ -223,7 +229,7 @@ class TelesaleServiceImpl:
             )
 
             await session.commit()
-            return self._call_to_response(call)
+            return self._call_to_proto(call)
 
     async def ListCalls(self, request, context):
         async with async_session_factory() as session:
@@ -246,13 +252,13 @@ class TelesaleServiceImpl:
 
             total_pages = math.ceil(total / page_size) if total > 0 else 1
 
-            return {
-                "calls": [self._call_to_response(c) for c in calls],
-                "pagination": {
-                    "total": total, "page": page,
-                    "page_size": page_size, "total_pages": total_pages,
-                },
-            }
+            return sale_pb2.ListCallsResponse(
+                calls=[self._call_to_proto(c) for c in calls],
+                pagination=common_pb2.PaginationResponse(
+                    total=total, page=page,
+                    page_size=page_size, total_pages=total_pages,
+                ),
+            )
 
     # --- Opportunities & Deals ---
 
@@ -271,13 +277,13 @@ class TelesaleServiceImpl:
 
             total_pages = math.ceil(total / page_size) if total > 0 else 1
 
-            return {
-                "opportunities": [self._opportunity_to_response(o) for o in opps],
-                "pagination": {
-                    "total": total, "page": page,
-                    "page_size": page_size, "total_pages": total_pages,
-                },
-            }
+            return sale_pb2.ListOpportunitiesResponse(
+                opportunities=[self._opportunity_to_proto(o) for o in opps],
+                pagination=common_pb2.PaginationResponse(
+                    total=total, page=page,
+                    page_size=page_size, total_pages=total_pages,
+                ),
+            )
 
     async def UpdateOpportunity(self, request, context):
         async with async_session_factory() as session:
@@ -301,7 +307,7 @@ class TelesaleServiceImpl:
                 return
 
             await session.commit()
-            return self._opportunity_to_response(opp)
+            return self._opportunity_to_proto(opp)
 
     async def CloseDeal(self, request, context):
         async with async_session_factory() as session:
@@ -320,14 +326,14 @@ class TelesaleServiceImpl:
             await session.commit()
             logger.info("deal_closed", deal_id=deal.id, status=deal.status)
 
-            return {
-                "id": deal.id,
-                "opportunity_id": deal.opportunity_id,
-                "status": deal.status,
-                "actual_revenue": float(deal.actual_revenue or 0),
-                "closed_at": deal.closed_at.isoformat() if deal.closed_at else "",
-                "created_at": deal.created_at.isoformat() if deal.created_at else "",
-            }
+            return sale_pb2.DealResponse(
+                id=deal.id,
+                opportunity_id=deal.opportunity_id,
+                status=deal.status,
+                actual_revenue=float(deal.actual_revenue or 0),
+                closed_at=deal.closed_at.isoformat() if deal.closed_at else "",
+                created_at=deal.created_at.isoformat() if deal.created_at else "",
+            )
 
     # --- Performance ---
 
@@ -341,7 +347,6 @@ class TelesaleServiceImpl:
             end = date.fromisoformat(request.end_date)
             user_id = request.user_id if request.HasField("user_id") else None
 
-            # Aggregate metrics
             lead_counts = await lead_repo.count_by_status(
                 start_date=start, end_date=end, user_id=user_id
             )
@@ -360,74 +365,74 @@ class TelesaleServiceImpl:
 
             conversion_rate = (qualified / total_leads * 100) if total_leads > 0 else 0
 
-            return {
-                "total_calls": total_calls,
-                "total_leads": total_leads,
-                "qualified_leads": qualified,
-                "total_opportunities": lead_counts.get("converted", 0),
-                "total_deals_won": 0,  # Could query deals table
-                "total_revenue": revenue,
-                "conversion_rate": round(conversion_rate, 2),
-                "daily_metrics": [],  # Could be populated with daily breakdown
-            }
+            return sale_pb2.SalePerformanceResponse(
+                total_calls=total_calls,
+                total_leads=total_leads,
+                qualified_leads=qualified,
+                total_opportunities=lead_counts.get("converted", 0),
+                total_deals_won=0,
+                total_revenue=revenue,
+                conversion_rate=round(conversion_rate, 2),
+                daily_metrics=[],
+            )
 
     # --- Helpers ---
 
     @staticmethod
-    def _staff_to_response(staff) -> dict:
-        return {
-            "id": staff.id,
-            "user_id": staff.user_id,
-            "user_name": staff.user.name if staff.user else "",
-            "user_email": staff.user.email if staff.user else "",
-            "team_name": staff.user.team.name if staff.user and staff.user.team else "",
-            "target_revenue_monthly": float(staff.target_revenue_monthly or 0),
-            "commission_rate": float(staff.commission_rate or 0),
-            "created_at": staff.created_at.isoformat() if staff.created_at else "",
-        }
+    def _staff_to_proto(staff):
+        return sale_pb2.SaleStaffResponse(
+            id=staff.id,
+            user_id=staff.user_id,
+            user_name=staff.user.name if getattr(staff, 'user', None) else "",
+            user_email=staff.user.email if getattr(staff, 'user', None) else "",
+            team_name=staff.user.team.name if getattr(staff, 'user', None) and getattr(staff.user, 'team', None) else "",
+            target_revenue_monthly=float(staff.target_revenue_monthly or 0),
+            commission_rate=float(staff.commission_rate or 0),
+            created_at=staff.created_at.isoformat() if staff.created_at else "",
+        )
 
     @staticmethod
-    def _lead_to_response(lead) -> dict:
-        return {
-            "id": lead.id,
-            "name": lead.name or "",
-            "phone": lead.phone or "",
-            "email": lead.email or "",
-            "source": lead.source or "",
-            "status": lead.status or "new",
-            "assigned_to": lead.assigned_to,
-            "assigned_to_name": lead.assignee.name if lead.assignee else "",
-            "team_id": lead.team_id,
-            "team_name": lead.team.name if lead.team else "",
-            "created_at": lead.created_at.isoformat() if lead.created_at else "",
-            "updated_at": lead.updated_at.isoformat() if lead.updated_at else "",
-        }
+    def _lead_to_proto(lead):
+        return sale_pb2.LeadResponse(
+            id=lead.id,
+            name=lead.name or "",
+            phone=lead.phone or "",
+            email=lead.email or "",
+            source=lead.source or "",
+            status=lead.status or "new",
+            assigned_to=lead.assigned_to if lead.assigned_to else 0,
+            assigned_to_name=getattr(lead, 'assignee', None) and lead.assignee.name or "",
+            team_id=lead.team_id if lead.team_id else 0,
+            team_name=getattr(lead, 'team', None) and lead.team.name or "",
+            created_at=lead.created_at.isoformat() if lead.created_at else "",
+            updated_at=lead.updated_at.isoformat() if lead.updated_at else "",
+        )
 
     @staticmethod
-    def _call_to_response(call) -> dict:
-        return {
-            "id": call.id,
-            "sale_id": call.sale_id or 0,
-            "sale_name": call.sale.name if call.sale else "",
-            "lead_id": call.lead_id or 0,
-            "lead_name": "",
-            "call_time": call.call_time.isoformat() if call.call_time else "",
-            "duration_seconds": call.duration_seconds or 0,
-            "result": call.result or "",
-            "note": call.note or "",
-            "created_at": call.created_at.isoformat() if call.created_at else "",
-        }
+    def _call_to_proto(call):
+        return sale_pb2.CallResponse(
+            id=call.id,
+            sale_id=call.sale_id or 0,
+            sale_name=getattr(call, 'sale', None) and call.sale.name or "",
+            lead_id=call.lead_id or 0,
+            lead_name="",
+            call_time=call.call_time.isoformat() if call.call_time else "",
+            duration_seconds=call.duration_seconds or 0,
+            result=call.result or "",
+            note=call.note or "",
+            created_at=call.created_at.isoformat() if call.created_at else "",
+        )
 
     @staticmethod
-    def _opportunity_to_response(opp) -> dict:
-        return {
-            "id": opp.id,
-            "lead_id": opp.lead_id,
-            "lead_name": opp.lead.name if opp.lead else "",
-            "value": float(opp.value or 0),
-            "stage": opp.stage or "",
-            "probability": opp.probability or 0,
-            "expected_close_date": str(opp.expected_close_date) if opp.expected_close_date else "",
-            "created_at": opp.created_at.isoformat() if opp.created_at else "",
-            "updated_at": opp.updated_at.isoformat() if opp.updated_at else "",
-        }
+    def _opportunity_to_proto(opp):
+        return sale_pb2.OpportunityResponse(
+            id=opp.id,
+            lead_id=opp.lead_id,
+            lead_name=getattr(opp, 'lead', None) and opp.lead.name or "",
+            value=float(opp.value or 0),
+            stage=opp.stage or "",
+            probability=opp.probability or 0,
+            expected_close_date=str(opp.expected_close_date) if opp.expected_close_date else "",
+            created_at=opp.created_at.isoformat() if opp.created_at else "",
+            updated_at=opp.updated_at.isoformat() if opp.updated_at else "",
+        )

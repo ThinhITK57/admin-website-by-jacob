@@ -1,6 +1,6 @@
 """Role and Permission ORM models with pivot tables."""
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, String, Table, Text, func
+from sqlalchemy import Integer, Column, DateTime, ForeignKey, String, Table, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from admin_crm.db.models.base import Base
@@ -14,13 +14,13 @@ role_has_permissions = Table(
     Base.metadata,
     Column(
         "permission_id",
-        BigInteger,
+        Integer,
         ForeignKey("permissions.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(
         "role_id",
-        BigInteger,
+        Integer,
         ForeignKey("roles.id", ondelete="CASCADE"),
         primary_key=True,
     ),
@@ -31,12 +31,12 @@ model_has_roles = Table(
     Base.metadata,
     Column(
         "role_id",
-        BigInteger,
+        Integer,
         ForeignKey("roles.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column("model_type", String(50), default="User", primary_key=True),
-    Column("model_id", BigInteger, nullable=False, primary_key=True),
+    Column("model_id", Integer, nullable=False, primary_key=True),
 )
 
 
@@ -50,7 +50,7 @@ class Role(Base):
 
     __tablename__ = "roles"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     guard_name: Mapped[str] = mapped_column(String(100), default="web", server_default="web")
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -59,7 +59,7 @@ class Role(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     created_by: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
     # Relationships
@@ -72,8 +72,11 @@ class Role(Base):
     users = relationship(
         "User",
         secondary=model_has_roles,
+        primaryjoin="Role.id == model_has_roles.c.role_id",
+        secondaryjoin="User.id == model_has_roles.c.model_id",
         back_populates="roles",
         lazy="selectin",
+        viewonly=True,
     )
 
     def __repr__(self) -> str:
@@ -94,7 +97,7 @@ class Permission(Base):
 
     __tablename__ = "permissions"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(150), unique=True, nullable=False, index=True)
     guard_name: Mapped[str] = mapped_column(String(100), default="web", server_default="web")
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -103,7 +106,7 @@ class Permission(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     created_by: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
     # Relationships

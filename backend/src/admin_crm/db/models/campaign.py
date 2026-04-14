@@ -3,7 +3,7 @@
 import enum
 
 from sqlalchemy import (
-    BigInteger,
+    Integer,
     Date,
     DateTime,
     Enum,
@@ -65,7 +65,7 @@ class Campaign(BaseModel):
         server_default="draft",
     )
     owner_id: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
     # Relationships
@@ -86,9 +86,9 @@ class AdGroup(Base, TimestampMixin):
 
     __tablename__ = "ad_groups"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     campaign_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False
+        Integer, ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     budget: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
@@ -114,9 +114,9 @@ class Ad(Base, TimestampMixin):
 
     __tablename__ = "ads"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     ad_group_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("ad_groups.id", ondelete="CASCADE"), nullable=False
+        Integer, ForeignKey("ad_groups.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     creative_url: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -142,13 +142,13 @@ class CampaignMetric(Base):
         UniqueConstraint("campaign_id", "date", name="uq_campaign_metrics_campaign_date"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     campaign_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False
+        Integer, ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False
     )
     date: Mapped = mapped_column(Date, nullable=False)
-    impressions: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
-    clicks: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
+    impressions: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    clicks: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     cost: Mapped[float] = mapped_column(Numeric(15, 2), default=0, server_default="0")
     conversions: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     revenue: Mapped[float] = mapped_column(Numeric(15, 2), default=0, server_default="0")

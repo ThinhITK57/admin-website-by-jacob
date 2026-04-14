@@ -21,57 +21,24 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // For MVP/demo: simulate login with mock data
-      // In production this calls the gRPC backend via API route
-      const mockUsers: Record<string, { name: string; roles: { id: number; name: string }[]; team_id?: number; team_name?: string }> = {
-        "admin@company.vn": {
-          name: "Super Admin",
-          roles: [{ id: 1, name: "super_admin" }],
-        },
-        "leader.sale@company.vn": {
-          name: "Nguyễn Văn Leader",
-          roles: [{ id: 3, name: "leader" }],
-          team_id: 1,
-          team_name: "Team Sale Telesale 1",
-        },
-        "sale1@company.vn": {
-          name: "Trần Thị Sale1",
-          roles: [{ id: 4, name: "nhan_vien" }],
-          team_id: 1,
-          team_name: "Team Sale Telesale 1",
-        },
-        "ads@company.vn": {
-          name: "Lê Văn Ads",
-          roles: [{ id: 4, name: "nhan_vien" }],
-          team_id: 2,
-          team_name: "Team Marketing Ads",
-        },
-      };
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Simulate network delay
-      await new Promise((r) => setTimeout(r, 800));
+      const data = await res.json();
 
-      if (password !== "password" || !mockUsers[email]) {
-        setError("Email hoặc mật khẩu không chính xác");
+      if (!res.ok) {
+        setError(data.error || "Email hoặc mật khẩu không chính xác");
         setLoading(false);
         return;
       }
 
-      const userData = mockUsers[email];
       login(
-        {
-          id: Object.keys(mockUsers).indexOf(email) + 1,
-          name: userData.name,
-          email,
-          phone: "",
-          avatar: "",
-          status: "active",
-          team_id: userData.team_id,
-          team_name: userData.team_name,
-          roles: userData.roles,
-        },
-        "mock-access-token-" + Date.now(),
-        "mock-refresh-token-" + Date.now()
+        data.user,
+        data.access_token,
+        data.refresh_token
       );
 
       router.push("/dashboard");

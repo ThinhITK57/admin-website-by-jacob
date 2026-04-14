@@ -2,14 +2,18 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, func
+from sqlalchemy import BigInteger, Integer, DateTime, ForeignKey, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+# Use Integer for SQLite compatibility (autoincrement requires INTEGER PK)
+# In production with PostgreSQL, switch back to BigInteger
+PK_TYPE = Integer
 
 
 class Base(DeclarativeBase):
     """Base class for all ORM models."""
 
-    pass
+    __allow_unmapped__ = True
 
 
 class TimestampMixin:
@@ -46,12 +50,12 @@ class AuditMixin:
     """Mixin that tracks who created/updated a record."""
 
     created_by: Mapped[int | None] = mapped_column(
-        BigInteger,
+        PK_TYPE,
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
     updated_by: Mapped[int | None] = mapped_column(
-        BigInteger,
+        PK_TYPE,
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
@@ -65,4 +69,5 @@ class BaseModel(Base, TimestampMixin, SoftDeleteMixin, AuditMixin):
 
     __abstract__ = True
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(PK_TYPE, primary_key=True, autoincrement=True)
+

@@ -1,6 +1,6 @@
 """User ORM model."""
 
-from sqlalchemy import BigInteger, Enum, ForeignKey, String, Text
+from sqlalchemy import Integer, Enum, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from admin_crm.db.models.base import BaseModel
@@ -31,7 +31,7 @@ class User(BaseModel):
         server_default="active",
     )
     team_id: Mapped[int | None] = mapped_column(
-        BigInteger,
+        Integer,
         ForeignKey("teams.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
@@ -42,6 +42,8 @@ class User(BaseModel):
     roles = relationship(
         "Role",
         secondary="model_has_roles",
+        primaryjoin="User.id == model_has_roles.c.model_id",
+        secondaryjoin="Role.id == model_has_roles.c.role_id",
         back_populates="users",
         lazy="selectin",
     )

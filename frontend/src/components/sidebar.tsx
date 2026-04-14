@@ -88,8 +88,8 @@ export function Sidebar() {
           "fixed top-0 left-0 z-50 h-screen flex flex-col transition-all duration-300 ease-in-out",
           "border-r border-[var(--color-border)]",
           sidebarCollapsed ? "w-[68px]" : "w-[260px]",
-          "max-lg:translate-x-[-100%]",
-          sidebarMobileOpen && "max-lg:translate-x-0",
+          "-translate-x-full lg:translate-x-0",
+          sidebarMobileOpen && "translate-x-0",
         )}
         style={{ background: "var(--color-sidebar)" }}
       >

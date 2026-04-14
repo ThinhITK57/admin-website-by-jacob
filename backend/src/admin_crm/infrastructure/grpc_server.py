@@ -25,11 +25,12 @@ async def create_server() -> grpc.aio.Server:
     Returns:
         Configured gRPC server ready to start.
     """
-    # Interceptors are applied in reverse order (last in list = first executed)
+    # Interceptors: first in list = outermost = executes first
+    # Order: Logging → Auth (sets user context) → RBAC (checks permissions)
     interceptors = [
-        RBACInterceptor(),
-        AuthInterceptor(),
         LoggingInterceptor(),
+        AuthInterceptor(),
+        RBACInterceptor(),
     ]
 
     server = grpc.aio.server(
@@ -89,26 +90,36 @@ def _register_services(server: grpc.aio.Server) -> None:
     """
     logger.info("services_registered", note="Awaiting proto compilation")
 
-    # TODO: After running `make proto`, uncomment and use:
-    # -----------------------------------------------
-    # import sys
-    # sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "generated"))
-    #
-    # from generated import user_pb2_grpc
-    # from generated import role_pb2_grpc
-    # from generated import sale_pb2_grpc
-    # from generated import campaign_pb2_grpc
-    # from generated import team_pb2_grpc
-    #
-    # from admin_crm.application.services.user_service import UserServiceImpl
-    # from admin_crm.application.services.role_service import RoleServiceImpl
-    # from admin_crm.application.services.sale_service import TelesaleServiceImpl
-    # from admin_crm.application.services.campaign_service import CampaignServiceImpl
-    # from admin_crm.application.services.team_service import TeamServiceImpl
-    #
-    # user_pb2_grpc.add_UserServiceServicer_to_server(UserServiceImpl(), server)
-    # role_pb2_grpc.add_RoleServiceServicer_to_server(RoleServiceImpl(), server)
-    # sale_pb2_grpc.add_TelesaleServiceServicer_to_server(TelesaleServiceImpl(), server)
-    # campaign_pb2_grpc.add_CampaignServiceServicer_to_server(CampaignServiceImpl(), server)
-    # team_pb2_grpc.add_TeamServiceServicer_to_server(TeamServiceImpl(), server)
-    pass
+    import sys
+    from pathlib import Path
+    backend_path = str(Path(__file__).resolve().parents[3])
+    generated_path = str(Path(__file__).resolve().parents[3] / "generated")
+    
+    if backend_path not in sys.path:
+        sys.path.insert(0, backend_path)
+    if generated_path not in sys.path:
+        sys.path.insert(0, generated_path)
+    
+    logger.info("loading_generated_protos", backend_path=backend_path, generated_path=generated_path)
+    
+    try:
+        import user_pb2_grpc
+        import role_pb2_grpc
+        import sale_pb2_grpc
+        import campaign_pb2_grpc
+        import team_pb2_grpc
+    except ImportError as e:
+        logger.error("proto_import_error", error=str(e), path=sys.path)
+        raise
+    
+    from admin_crm.application.services.user_service import UserServiceImpl
+    from admin_crm.application.services.role_service import RoleServiceImpl
+    from admin_crm.application.services.sale_service import TelesaleServiceImpl
+    from admin_crm.application.services.campaign_service import CampaignServiceImpl
+    from admin_crm.application.services.team_service import TeamServiceImpl
+    
+    user_pb2_grpc.add_UserServiceServicer_to_server(UserServiceImpl(), server)
+    role_pb2_grpc.add_RoleServiceServicer_to_server(RoleServiceImpl(), server)
+    sale_pb2_grpc.add_TelesaleServiceServicer_to_server(TelesaleServiceImpl(), server)
+    campaign_pb2_grpc.add_CampaignServiceServicer_to_server(CampaignServiceImpl(), server)
+    team_pb2_grpc.add_TeamServiceServicer_to_server(TeamServiceImpl(), server)

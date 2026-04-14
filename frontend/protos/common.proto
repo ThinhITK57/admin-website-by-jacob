@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package admin_crm;
+
+option java_multiple_files = true;
+
+// =============================================
+// SHARED MESSAGES - Dùng chung toàn bộ services
+// =============================================
+
+// Pagination Request
+message PaginationRequest {
+  int32 page = 1;         // 1-indexed
+  int32 page_size = 2;    // default 20, max 100
+  string sort_by = 3;     // field name
+  string sort_order = 4;  // "asc" or "desc"
+}
+
+// Pagination Response metadata
+message PaginationResponse {
+  int32 total = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total_pages = 4;
+}
+
+// Empty message
+message Empty {}
+
+// Generic ID request
+message IdRequest {
+  int64 id = 1;
+}
+
+// Generic status response
+message StatusResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Timestamp wrapper (ISO 8601 string for simplicity)
+message TimestampField {
+  string value = 1;  // "2026-04-11T14:00:00Z"
+}
+
+// Filter operator for advanced filtering
+message FilterField {
+  string field = 1;
+  string operator = 2;  // eq, ne, gt, gte, lt, lte, like, in
+  string value = 3;
+}
+
+// Generic list filter
+message ListFilter {
+  PaginationRequest pagination = 1;
+  repeated FilterField filters = 2;
+  string search = 3;  // global search term
+}

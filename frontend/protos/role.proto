@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package admin_crm;
+
+import "common.proto";
+
+option java_multiple_files = true;
+
+// =============================================
+// ROLE & PERMISSION SERVICE - RBAC Management
+// =============================================
+
+service RoleService {
+  // Role CRUD
+  rpc CreateRole (CreateRoleRequest) returns (RoleResponse);
+  rpc GetRole (IdRequest) returns (RoleResponse);
+  rpc ListRoles (ListFilter) returns (ListRolesResponse);
+  rpc UpdateRole (UpdateRoleRequest) returns (RoleResponse);
+  rpc DeleteRole (IdRequest) returns (StatusResponse);
+
+  // Permission management
+  rpc ListPermissions (ListFilter) returns (ListPermissionsResponse);
+  rpc AssignPermissionsToRole (AssignPermissionsRequest) returns (StatusResponse);
+  rpc GetRolePermissions (IdRequest) returns (ListPermissionsResponse);
+
+  // User-Role management
+  rpc AssignRolesToUser (AssignRolesRequest) returns (StatusResponse);
+  rpc GetUserRoles (IdRequest) returns (ListRolesResponse);
+  rpc GetUserPermissions (IdRequest) returns (ListPermissionsResponse);
+}
+
+// --- Role Messages ---
+
+message CreateRoleRequest {
+  string name = 1;
+  optional string description = 2;
+  repeated int64 permission_ids = 3;
+}
+
+message UpdateRoleRequest {
+  int64 id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  repeated int64 permission_ids = 4;
+}
+
+message RoleResponse {
+  int64 id = 1;
+  string name = 2;
+  string guard_name = 3;
+  string description = 4;
+  repeated PermissionResponse permissions = 5;
+  string created_at = 6;
+}
+
+message ListRolesResponse {
+  repeated RoleResponse roles = 1;
+  PaginationResponse pagination = 2;
+}
+
+// --- Permission Messages ---
+
+message PermissionResponse {
+  int64 id = 1;
+  string name = 2;
+  string guard_name = 3;
+  string description = 4;
+}
+
+message ListPermissionsResponse {
+  repeated PermissionResponse permissions = 1;
+  PaginationResponse pagination = 2;
+}
+
+message AssignPermissionsRequest {
+  int64 role_id = 1;
+  repeated int64 permission_ids = 2;
+}
+
+message AssignRolesRequest {
+  int64 user_id = 1;
+  repeated int64 role_ids = 2;
+}

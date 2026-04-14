@@ -29,14 +29,14 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex w-full">
       <Sidebar />
 
       {/* Main content area */}
       <div
         className={cn(
-          "flex-1 flex flex-col min-h-screen transition-all duration-300",
-          sidebarCollapsed ? "lg:ml-[68px]" : "lg:ml-[260px]"
+          "flex-1 flex flex-col min-h-screen min-w-0 transition-all duration-300",
+          sidebarCollapsed ? "lg:pl-[68px]" : "lg:pl-[260px]"
         )}
       >
         <Topbar />
