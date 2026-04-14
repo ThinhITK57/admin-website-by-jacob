@@ -44,9 +44,14 @@ METHOD_PERMISSIONS: dict[str, str] = {
 
 # Role hierarchy: higher roles inherit all permissions of lower roles
 ROLE_HIERARCHY: dict[str, int] = {
+    "Admin": 100,
     "super_admin": 100,
+    "Manager": 80,
     "truong_phong": 80,
+    "Leader": 60,
     "leader": 60,
+    "Sale": 40,
+    "Ads": 40,
     "nhan_vien": 40,
 }
 
@@ -87,7 +92,7 @@ class RBACInterceptor(grpc.aio.ServerInterceptor):
         user_roles = user_ctx.get("roles", [])
 
         # Super admin bypasses all checks
-        if "super_admin" in user_roles:
+        if "super_admin" in user_roles or "Admin" in user_roles:
             return await continuation(handler_call_details)
 
         # Check permission via custom checker or role-based fallback
