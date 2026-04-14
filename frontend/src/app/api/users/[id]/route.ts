@@ -15,9 +15,10 @@ function getGrpcMetadata(request: NextRequest): grpc.Metadata {
 // PUT: Update User
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const id = parseInt(params.id);
     const body = await request.json();
     
@@ -52,9 +53,10 @@ export async function PUT(
 // DELETE: Delete (Soft) User
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const id = parseInt(params.id);
     
     const deleteRequest = {
