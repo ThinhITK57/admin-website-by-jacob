@@ -116,18 +116,18 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-8">
+        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-8">
           {NAV_SECTIONS.map((section) => (
             <div key={section.title}>
               {!sidebarCollapsed && (
                 <p
-                  className="px-4 mb-3 text-[11px] font-bold uppercase tracking-widest"
+                  className="px-2 mb-3 text-[11px] font-bold uppercase tracking-widest"
                   style={{ color: "var(--color-muted-foreground)" }}
                 >
                   {section.title}
                 </p>
               )}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {section.items.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -140,12 +140,12 @@ export function Sidebar() {
                       href={item.href}
                       onClick={() => setSidebarMobile(false)}
                       className={cn(
-                        "flex items-center gap-3.5 px-3.5 py-2.5 mx-1 rounded-lg text-[14px] leading-relaxed transition-all duration-200",
-                        "hover:bg-[var(--color-sidebar-hover)]",
+                        "flex items-center gap-3.5 px-4 py-3 rounded-xl text-[14px] leading-relaxed transition-all duration-200",
+                        "hover:bg-[var(--color-sidebar-hover)] hover:shadow-sm",
                         isActive &&
-                          "bg-[var(--color-sidebar-active)] text-white font-semibold",
+                          "bg-[var(--color-sidebar-active)] text-white font-semibold shadow-sm",
                         !isActive && "text-[var(--color-muted-foreground)] font-medium hover:text-white",
-                        sidebarCollapsed && "justify-center mx-0",
+                        sidebarCollapsed && "justify-center px-0",
                       )}
                       title={sidebarCollapsed ? item.label : undefined}
                     >

@@ -45,7 +45,7 @@ export function Topbar() {
           <input
             type="text"
             placeholder="Tìm kiếm nhanh... (Ctrl+K)"
-            className="input pl-10 pr-4 py-2 text-sm"
+            className="input !pl-10 pr-4 py-2 text-sm"
             style={{
               background: "var(--color-card)",
               ...(searchFocused
