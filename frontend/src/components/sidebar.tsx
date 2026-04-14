@@ -116,18 +116,18 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-6">
+        <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-8">
           {NAV_SECTIONS.map((section) => (
             <div key={section.title}>
               {!sidebarCollapsed && (
                 <p
-                  className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest"
-                  style={{ color: "var(--color-muted)" }}
+                  className="px-4 mb-3 text-[11px] font-bold uppercase tracking-widest"
+                  style={{ color: "var(--color-muted-foreground)" }}
                 >
                   {section.title}
                 </p>
               )}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {section.items.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -140,12 +140,12 @@ export function Sidebar() {
                       href={item.href}
                       onClick={() => setSidebarMobile(false)}
                       className={cn(
-                        "flex items-center gap-3.5 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                        "flex items-center gap-3.5 px-3.5 py-2.5 mx-1 rounded-lg text-[14px] leading-relaxed transition-all duration-200",
                         "hover:bg-[var(--color-sidebar-hover)]",
                         isActive &&
-                          "bg-[var(--color-sidebar-active)] text-[var(--color-primary-hover)]",
-                        !isActive && "text-[var(--color-muted-foreground)]",
-                        sidebarCollapsed && "justify-center px-0",
+                          "bg-[var(--color-sidebar-active)] text-white font-semibold",
+                        !isActive && "text-[var(--color-muted-foreground)] font-medium hover:text-white",
+                        sidebarCollapsed && "justify-center mx-0",
                       )}
                       title={sidebarCollapsed ? item.label : undefined}
                     >
@@ -154,7 +154,7 @@ export function Sidebar() {
                         className={cn(
                           "shrink-0 transition-colors",
                           isActive
-                            ? "text-[var(--color-primary)]"
+                            ? "text-[var(--color-primary-hover)]"
                             : "text-[var(--color-muted)]"
                         )}
                       />
@@ -164,7 +164,7 @@ export function Sidebar() {
                       {isActive && !sidebarCollapsed && (
                         <div
                           className="ml-auto w-1.5 h-1.5 rounded-full animate-pulse-glow"
-                          style={{ background: "var(--color-primary)" }}
+                          style={{ background: "var(--color-primary-hover)" }}
                         />
                       )}
                     </Link>
