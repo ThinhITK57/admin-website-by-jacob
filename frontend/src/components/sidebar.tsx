@@ -85,7 +85,7 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-screen flex flex-col transition-all duration-300 ease-in-out",
+          "fixed lg:sticky top-0 left-0 z-50 h-screen shrink-0 flex flex-col transition-all duration-300 ease-in-out",
           "border-r border-[var(--color-border)]",
           sidebarCollapsed ? "w-[68px]" : "w-[260px]",
           "-translate-x-full lg:translate-x-0",

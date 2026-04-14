@@ -18,7 +18,7 @@ import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 // Mock data for dashboard KPIs
 const KPI_DATA = [
   {
-    title: "Doanh Thu Tháng",
+    title: "Doanh Thu Tháng (Hệ Thống)",
     value: 285000000,
     change: 12.5,
     trend: "up" as const,
@@ -28,7 +28,7 @@ const KPI_DATA = [
     bgColor: "var(--color-success-muted)",
   },
   {
-    title: "Leads Mới",
+    title: "Leads Mới (Hệ Thống)",
     value: 142,
     change: 8.3,
     trend: "up" as const,
@@ -38,7 +38,7 @@ const KPI_DATA = [
     bgColor: "var(--color-primary-muted)",
   },
   {
-    title: "Cuộc Gọi Hôm Nay",
+    title: "Cuộc Gọi Hôm Nay (Hệ Thống)",
     value: 87,
     change: -3.2,
     trend: "down" as const,
@@ -48,10 +48,10 @@ const KPI_DATA = [
     bgColor: "var(--color-accent-muted)",
   },
   {
-    title: "Chi Phí Ads",
+    title: "Chi Phí Ads (Hệ Thống)",
     value: 45000000,
-    change: 5.1,
-    trend: "up" as const,
+    change: -5.1,
+    trend: "down" as const,
     icon: Megaphone,
     format: "currency",
     color: "var(--color-warning)",
@@ -68,9 +68,8 @@ const RECENT_ACTIVITIES = [
 ];
 
 const TOP_PERFORMERS = [
-  { name: "Trần Thị Sale1", calls: 45, revenue: 85000000, conversion: 18.5 },
-  { name: "Nguyễn Văn Leader", calls: 32, revenue: 120000000, conversion: 22.3 },
-  { name: "Lê Văn Ads", calls: 0, revenue: 0, conversion: 0 },
+  { name: "Trần Thị Sale1", calls: 45, revenue: 165000000, conversion: 18.5 },
+  { name: "Nguyễn Văn Leader", calls: 42, revenue: 120000000, conversion: 22.3 },
 ];
 
 const PIPELINE_DATA = [
@@ -139,14 +138,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Main content grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         {/* Sales Pipeline */}
         <div className="xl:col-span-2 card p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <BarChart3 size={20} style={{ color: "var(--color-primary)" }} />
-                Sales Pipeline
+                <BarChart3 size={20} className="shrink-0" style={{ color: "var(--color-primary)" }} />
+                <span>Sales Pipeline</span>
               </h2>
               <p className="text-xs mt-0.5" style={{ color: "var(--color-muted)" }}>
                 Tổng quan chuyển đổi lead tháng này
@@ -197,7 +196,7 @@ export default function DashboardPage() {
                     <th>Nhân viên</th>
                     <th>Cuộc gọi</th>
                     <th>Doanh thu</th>
-                    <th>Tỷ lệ CĐ</th>
+                    <th className="tooltip" data-tooltip="Tỷ lệ Chuyển Đổi">Tỷ lệ CĐ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -206,7 +205,7 @@ export default function DashboardPage() {
                       <td>
                         <div className="flex items-center gap-2.5">
                           <div
-                            className="avatar avatar-sm text-xs"
+                            className="avatar avatar-sm text-xs shrink-0"
                             style={{
                               background: `hsl(${i * 120}, 70%, 50%, 0.15)`,
                               color: `hsl(${i * 120}, 70%, 60%)`,
@@ -214,7 +213,7 @@ export default function DashboardPage() {
                           >
                             {p.name.charAt(0)}
                           </div>
-                          <span className="font-medium">{p.name}</span>
+                          <span className="font-medium truncate max-w-[120px] sm:max-w-none">{p.name}</span>
                         </div>
                       </td>
                       <td className="font-medium">{p.calls}</td>

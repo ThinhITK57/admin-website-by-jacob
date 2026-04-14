@@ -7,12 +7,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /** Format a number as Vietnamese currency (VND) */
-export function formatCurrency(value: number): string {
+export function formatCurrency(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "0 ₫";
+  
+  // Intl format can sometimes show 00.000 depending on node version and locale if input is tricky.
+  // Converting it explicitly to Float fallback and checking helps.
+  const numValue = Number(value);
+  if (isNaN(numValue) || numValue === 0) return "0 ₫";
+
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(numValue);
 }
 
 /** Format a number with thousands separator */
